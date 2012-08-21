@@ -36,6 +36,17 @@ class Cell(object):
                 pass
         except:
             raise
+            
+    def _check_move_value(self, value):
+        try:
+            intvalue = int(value)
+            if intvalue < 0 or intvalue > DIMENSIONS:
+                raise ValueError('Bad cell value : %d' % intvalue)
+            return intvalue
+        except:
+            raise
+        
+        
     
     def clean(self):
         self.move(0)
