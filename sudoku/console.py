@@ -145,11 +145,10 @@ class Console(object):
                     root = 3
                 self.new_board(root)
             elif cmd == 'f':
-                cell = self.board.find_forced_move_cell()
+                (cell, value) = self.board.find_forced_move()
                 if cell is None:
                     self._error_message = "No forced move cells"
                 else:
-                    value = list(cell.allowed_moves())[0]
                     cell.move(value)
             else:
                 self._error_message = "Bad command: " + ' '.join(command_list)

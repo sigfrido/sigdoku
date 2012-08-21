@@ -149,6 +149,7 @@ class CellGroup(object):
     def __init__(self, dimensions):
         self._cells = []
         self._dimensions = dimensions
+        self._allowed_moves = self._dimensions.moves
 
         
     def add_cell(self, cell):
@@ -174,11 +175,16 @@ class CellGroup(object):
     def deny_move(self, value, source_cell):
         for c in self._cells:
             c.deny_move(value)
+        self._allowed_moves.remove(value)
         
 
     def allow_move(self, value, source_cell):
         for c in self._cells:
             c.allow_move(value)
+        self._allowed_moves.add(value)
+        
+    def allowed_moves(self):
+        return self._allowed_moves
         
 
     # TODO refactor to a template method in a base class
@@ -189,6 +195,23 @@ class CellGroup(object):
             self.allow_move(old_value, cell)
         else:
             raise Exception('cell_changed with same values')
+            
+            
+    def find_forced_move(self):
+        for value in self.allowed_moves():
+            cell = None
+            for c in self._cells:
+                if c.is_allowed_move(value):
+                    if cell is None:
+                        cell = c
+                    else:
+                        cell = None
+                        break
+            if not cell is None:
+                return (cell, value)
+                
+        return (None, None)
+            
     
         
     
@@ -266,9 +289,16 @@ class Board(object):
         return 0 == self._empty_cells
 
 
-    def find_forced_move_cell(self):
+    def find_forced_move(self):
         for c in self._cells:
             if not c.value:
                 if len(c.allowed_moves()) == 1:
-                    return c
-        return None
+                    return (c, list(c.allowed_moves())[0])
+                    
+        for grouparray in [self._rows, self._cols, self._squares]:
+            for group in grouparray:
+                (c, v) = group.find_forced_move()
+                if not c is None:
+                    return (c, v)
+                    
+        return (None, None)
