@@ -9,9 +9,10 @@ class Dimensions(object):
             if not introot in Dimensions.valid_roots():
                 raise ValueError('Bad root value')
             self._root = introot
-            self._num_moves = self._root**2
+            self._size = self._root**2
         except:
             raise
+        
             
     @property
     def root(self):
@@ -20,22 +21,29 @@ class Dimensions(object):
         """
         return self._root
         
+        
     @classmethod
     def valid_roots(cls):
         return [2, 3, 4]
         
+        
     @property
-    def num_moves(self):
-        return self._num_moves
+    def size(self):
+        """
+        The board size is the root value squared: 9 for a typical sudoku board
+        """
+        return self._size
+        
         
     @property
     def moves(self):
-        return set(range(1, self._num_moves + 1))
+        return set(range(1, self._size + 1))
+        
         
     def check_move_value(self, value):
         try:
             intvalue = int(value)
-            if intvalue < 0 or intvalue > self._num_moves:
+            if intvalue < 0 or intvalue > self._size:
                 raise ValueError('Bad move value : %d' % intvalue)
             return intvalue
         except:
@@ -112,7 +120,7 @@ class CellGroup(object):
         self._dimensions = dimensions
         
     def add_cell(self, cell):
-        if len(self._cells) == self._dimensions.num_moves:
+        if len(self._cells) == self._dimensions.size:
             raise IndexError('Dimensions exceeded in group')
             
         if not isinstance(cell, Cell):

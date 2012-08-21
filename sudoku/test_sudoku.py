@@ -34,7 +34,7 @@ class TestCell(unittest.TestCase):
         # should raise an exception for illegal or out of range values
         self.assertRaises(ValueError, self.cell.move, 'Invalid move')
         self.assertRaises(ValueError, self.cell.move, -1)
-        self.assertRaises(ValueError, self.cell.move, self.cell.dimensions.num_moves + 1)
+        self.assertRaises(ValueError, self.cell.move, self.cell.dimensions.size + 1)
         
         
     def test_clean(self):
@@ -84,7 +84,7 @@ class testCellGroup(unittest.TestCase):
         
     def test_group_dimensions(self):
         group = self.buildGroup()
-        self.assertEqual(len(group._cells), self.dims.num_moves)
+        self.assertEqual(len(group._cells), self.dims.size)
         self.assertRaises(IndexError, group.add_cell, sudoku.Cell(self.dims))
         
         
