@@ -39,26 +39,35 @@ class TestCell(unittest.TestCase):
         self.assertRaises(sudoku.SudokuRangeError, self.cell.move, self.cell.dimensions.size + 1)
         
         
-    def test_clean(self):
+    def test_empty(self):
         self.cell.move(5)
-        self.assertFalse(self.cell.is_clean())
+        self.assertFalse(self.cell.is_empty())
         
-        self.cell.clean()
-        self.assertTrue(self.cell.is_clean())
+        self.cell.empty()
+        self.assertTrue(self.cell.is_empty())
         self.assertEqual(self.cell.value, 0)
         
         
     def test_allowed_moves(self):
-        self.cell.clean()
-        am = self.cell.allowed_moves()
-        self.assertEqual(am, set([1,2,3,4,5,6,7,8,9]))
+        self.cell.empty()
+        self.assertEqual(self.cell.allowed_moves(), set([1,2,3,4,5,6,7,8,9]))
+        
+        self.cell.deny_move(5)
+        self.assertEqual(self.cell.allowed_moves(), set([1,2,3,4,6,7,8,9]))
+        
+        self.cell.deny_move(9)
+        self.assertEqual(self.cell.allowed_moves(), set([1,2,3,4,6,7,8]))
+        
+        self.cell.deny_move(7)
+        self.assertEqual(self.cell.allowed_moves(), set([1,2,3,4,6,8]))
+        
         
     def test_allow_move(self):
         self.cell.deny_move(5)
-        self.assertFalse(self.cell.is_allowed_move(5), 'Move should be denied')
+        self.assertFalse(self.cell.is_allowed_move(5), msg = 'Move should be denied')
 
         self.cell.allow_move(5)
-        self.assertTrue(self.cell.is_allowed_move(5), 'Move should be allowed')
+        self.assertTrue(self.cell.is_allowed_move(5), msg = 'Move should be allowed')
 
 
 

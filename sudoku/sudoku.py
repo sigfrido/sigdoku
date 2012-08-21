@@ -64,19 +64,25 @@ class Dimensions(object):
     
         
 class Cell(object):
+    """
+    A board cell
+    """
     
     def __init__(self, dimensions):
         self._value = 0
         self._dimensions = dimensions
-        self._allowed_moves = self._dimensions.moves
+        self._allowed_moves = self.dimensions.moves
+    
     
     @property
     def dimensions(self):
         return self._dimensions
+    
         
     @property
     def value(self):
         return self._value
+    
                 
     def move(self, value):
         try:
@@ -95,15 +101,19 @@ class Cell(object):
                 pass
         except:
             raise
+    
             
-    def clean(self):
+    def empty(self):
         self.move(0)
+    
         
-    def is_clean(self):
+    def is_empty(self):
         return 0 == self._value
+    
         
     def allowed_moves(self):
         return self._allowed_moves
+    
         
     def is_allowed_move(self, value):
         return value in self.allowed_moves()
