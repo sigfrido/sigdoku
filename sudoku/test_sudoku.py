@@ -1,4 +1,4 @@
-import sudoku
+import sudoku, console
 import unittest
 
 
@@ -146,7 +146,7 @@ class testConsole(unittest.TestCase):
     
     
     def setUp(self):
-        self.console = sudoku.Console(3)
+        self.console = console.Console(3)
     
         
     def test_console_parse_cmd_quit(self):
