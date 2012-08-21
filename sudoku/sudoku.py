@@ -205,6 +205,11 @@ class Console(object):
         self.board = Board(root)
         self.do_play = True
         self._error_message = ''
+        self.render_separators = True
+        self.cell_width = 4
+        self.vertical_separator = '|'
+        self.vertical_separator_every = self.board.root
+        self.horizontal_separator_every = self.board.root
         
 
     # Interactive (non-testable) commands
@@ -224,6 +229,7 @@ class Console(object):
         if self.error_message:
             print self.error_message
             self.clear_error()
+        
             
     def get_command_line(self):
         command_line = raw_input('Your move (row col value; q to quit): ').strip()
@@ -242,36 +248,59 @@ class Console(object):
         
         
     def render(self):
-        cell_width = 4
-        separators = False
+        return  self._render_header_row() + \
+                self._separator_row() + \
+                self._render_cell_rows()
         
-        result = '|'.rjust(cell_width)
+    def _render_header_row(self):
+        result = self.vertical_separator.rjust(self.cell_width)
         for i in range(1, self.board.size + 1):
-            result += str(i).center(cell_width)
-            if separators and i % self.board.root == 0:
-                result += '|' 
+            result += str(i).center(self.cell_width)
+            result += self._render_vertical_separator(i)
         result += "\n"
-        separator_row = ''.ljust(cell_width * (self.board.size + 1) + int(separators) * self.board.root, '-') + "\n"
-        result += separator_row
+        return result
         
+
+    def _render_vertical_separator(self, index):
+        if self.render_separators and index % self.vertical_separator_every == 0:
+            return self.vertical_separator
+        return ''
+        
+                
+    def _render_separator_row(self, row):
+        if self.render_separators and row % self.horizontal_separator_every == 0:
+            return self._separator_row()
+        return ''
+
+        
+    def _separator_row(self):
+        return ''.ljust(self.cell_width * (self.board.size + 1) + \
+            int(self.render_separators) * self.vertical_separator_every, '-') + "\n"
+
+
+    def _render_cell_rows(self):
         row = 0
+        result = ''
         for r in self.board._rows:
             row += 1
-            buf = (str(row) + '|').rjust(cell_width)
-            col = 0
-            for c in r._cells:
-                col += 1
-                buf += self._cellvalue(c).center(cell_width)
-                if separators and col % self.board.root == 0:
-                    buf += '|' 
-
-            result += buf + "\n"
-            if separators:
-                result += separator_row
+            result += self._render_cell_row(r, row)
+            result += self._render_separator_row(row)
         return result
         
                 
-    def _cellvalue(self, cell):
+    def _render_cell_row(self, row, row_num):
+        buf = (str(row_num) + self.vertical_separator).rjust(self.cell_width)
+        col = 0
+        for c in row._cells:
+            col += 1
+            buf += self._render_cell(c).center(self.cell_width)
+            buf += self._render_vertical_separator(col)
+        buf += "\n"
+        
+        return buf
+        
+        
+    def _render_cell(self, cell):
         if cell.value:
             return str(cell.value)
         else:
