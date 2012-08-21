@@ -70,6 +70,7 @@ class Cell(object):
     def dimensions(self):
         return self._dimensions
         
+    @property
     def value(self):
         return self._value
                 
@@ -145,20 +146,27 @@ class Board(object):
         self._squares = self._makeCellGroups()
         
         # All zero-based
-        for i in range(DIMENSIONS**2):
-            cell = Cell()
+        for i in range(self.size**2):
+            cell = Cell(self._dimensions)
             self._cells.append(cell)
-            row = i / DIMENSIONS
-            col = i % DIMENSIONS
+            row = i / self.size
+            col = i % self.size
             self._rows[row].add_cell(cell)
             self._cols[col].add_cell(cell)
-            sqindex = i / ROOT
+            sqindex = i / self._dimensions.root
             
-            
+    @property
+    def dimensions(self):
+        return self._dimensions
+        
+    @property
+    def size(self):
+        return self._dimensions.size
+                    
     def _makeCellGroups(self):
         cgs = []
-        for i in range(DIMENSIONS):
-            cgs.append(CellGroup())
+        for i in range(self.size):
+            cgs.append(CellGroup(self.dimensions))
         return cgs
         
     def cell(self, cellIndex):

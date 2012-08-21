@@ -9,6 +9,8 @@ class TestDimensions(unittest.TestCase):
         self.assertRaises(ValueError, sudoku.Dimensions, 5)
         for root in sudoku.Dimensions.valid_roots():
             dim = sudoku.Dimensions(root)
+            self.assertEqual(root, dim.root)
+            self.assertEqual(root**2, dim.size)
 
     def test_check_move_value(self):
         dim = sudoku.Dimensions(3)
@@ -29,7 +31,7 @@ class TestCell(unittest.TestCase):
         
     def test_move(self):
         self.cell.move(5)
-        self.assertEqual(self.cell.value(), 5)
+        self.assertEqual(self.cell.value, 5)
 
         # should raise an exception for illegal or out of range values
         self.assertRaises(ValueError, self.cell.move, 'Invalid move')
@@ -43,7 +45,7 @@ class TestCell(unittest.TestCase):
         
         self.cell.clean()
         self.assertTrue(self.cell.is_clean())
-        self.assertEqual(self.cell.value(), 0)
+        self.assertEqual(self.cell.value, 0)
         
         
     def test_allowed_moves(self):
@@ -99,15 +101,29 @@ class testCellGroup(unittest.TestCase):
         g2 = self.buildGroup()
         
         g1.move(1, 5)
-        self.assertEqual(g1._cells[0].value(), 5)
+        self.assertEqual(g1._cells[0].value, 5)
         
         g2.move(9, 5)
-        self.assertEqual(g2._cells[8].value(), 5)
+        self.assertEqual(g2._cells[8].value, 5)
         
         g1.move(1, 5)
         g2.move(1, 3)
-        self.assertNotEqual(g1._cells[0].value(), g2._cells[0].value())
+        self.assertNotEqual(g1._cells[0].value, g2._cells[0].value)
         
+
+class testBoard(unittest.TestCase):
+    
+    def setUp(self):
+        self.board = sudoku.Board(3)
+        
+    def test_board_init(self):
+        self.assertEqual(len(self.board._cells), 81)
+        self.assertEqual(len(self.board._rows), 9)
+        self.assertEqual(len(self.board._cols), 9)
+        self.assertEqual(len(self.board._squares), 9)
+        
+        for cell in self.board._cells:
+            self.assertEqual(0, cell.value)
     
 if __name__ == '__main__':
     unittest.main()
