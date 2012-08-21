@@ -1,5 +1,8 @@
 
 class Dimensions(object):
+    """
+    A Dimensions object defines the size of the sudoku board and the allowed moves
+    """
     def __init__(self, root):
         try:
             introot = int(root)
@@ -10,13 +13,16 @@ class Dimensions(object):
         except:
             raise
             
+    @property
+    def root(self):
+        """
+        For a typical sudoku board, root = 3
+        """
+        return self._root
+        
     @classmethod
     def valid_roots(cls):
         return [2, 3, 4]
-        
-    @property
-    def root(self):
-        return self._root
         
     @property
     def num_moves(self):
