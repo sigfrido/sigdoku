@@ -129,8 +129,11 @@ class CellGroup(object):
             
         self._cells.append(cell)
         
-    def move(self, cell, value):
-        self._cells[cell - 1].move(value)
+    def move(self, index, value):
+        self.cell(index).move(value)
+        
+    def cell(self, index):
+        return self._cells[index - 1]
         
     
     
@@ -153,7 +156,12 @@ class Board(object):
             col = i % self.size
             self._rows[row].add_cell(cell)
             self._cols[col].add_cell(cell)
-            sqindex = i / self._dimensions.root
+            
+            sqindex = i / self.root
+            sqrow = sqindex / self.root / self.root
+            sqcol = sqindex % self.root
+            
+            self._squares[sqrow*self.root + sqcol].add_cell(cell)
             
     @property
     def dimensions(self):
@@ -162,6 +170,10 @@ class Board(object):
     @property
     def size(self):
         return self._dimensions.size
+                    
+    @property
+    def root(self):
+        return self._dimensions.root
                     
     def _makeCellGroups(self):
         cgs = []

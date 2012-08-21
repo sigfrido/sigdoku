@@ -124,6 +124,15 @@ class testBoard(unittest.TestCase):
         
         for cell in self.board._cells:
             self.assertEqual(0, cell.value)
+
+        self.board._cells[11].move(5)
+        self.assertEqual(5, self.board._rows[1].cell(3).value)
+        self.assertEqual(5, self.board._cols[2].cell(2).value)
+        self.assertEqual(5, self.board._squares[0].cell(6).value)
+        
+        
+            
+        
     
 if __name__ == '__main__':
     unittest.main()
