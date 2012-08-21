@@ -7,7 +7,7 @@ class Dimensions(object):
             if not introot in Dimensions.valid_roots():
                 raise ValueError('Bad root value')
             self._root = introot
-            self._dimensions = self._root**2
+            self._num_moves = self._root**2
         except:
             raise
             
@@ -21,7 +21,7 @@ class Dimensions(object):
         return self._root
         
     @property
-    def dimensions(self):
+    def num_moves(self):
         return self._dimensions
         
     @property
@@ -46,9 +46,10 @@ class SudokuDeniedMove(SudokuException):
 
 class Cell(object):
     
-    def __init__(self):
+    def __init__(self, dimensions):
         self._value = 0
-        self._allowed_moves = MOVES.copy()
+        self._dimensions = dimensions
+        self._allowed_moves = self._dimensions.moves
     
     def move(self, value):
         try:
