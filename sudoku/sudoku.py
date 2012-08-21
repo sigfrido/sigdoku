@@ -242,20 +242,32 @@ class Console(object):
         
         
     def render(self):
-        width = 4
+        cell_width = 4
+        separators = False
         
-        result = ''.center(width)
+        result = '|'.rjust(cell_width)
         for i in range(1, self.board.size + 1):
-            result += str(i).center(width)
+            result += str(i).center(cell_width)
+            if separators and i % self.board.root == 0:
+                result += '|' 
         result += "\n"
-        result += ''.ljust(width * (self.board.size + 1), '-') + "\n"
+        separator_row = ''.ljust(cell_width * (self.board.size + 1) + int(separators) * self.board.root, '-') + "\n"
+        result += separator_row
+        
         row = 0
         for r in self.board._rows:
             row += 1
-            buf = (str(row) + '|').rjust(width)
+            buf = (str(row) + '|').rjust(cell_width)
+            col = 0
             for c in r._cells:
-                buf += self._cellvalue(c).center(width)
+                col += 1
+                buf += self._cellvalue(c).center(cell_width)
+                if separators and col % self.board.root == 0:
+                    buf += '|' 
+
             result += buf + "\n"
+            if separators:
+                result += separator_row
         return result
         
                 
