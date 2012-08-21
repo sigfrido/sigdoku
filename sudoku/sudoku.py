@@ -201,8 +201,6 @@ class Board(object):
         
 class Console(object):
     
-    # TODO error reporting
-    
     def __init__(self, root):
         self.board = Board(root)
         self.do_play = True
@@ -244,21 +242,26 @@ class Console(object):
         
         
     def render(self):
-        result  = "   1  2  3  4  5  6  7  8  9 \n"
-        result += "-----------------------------\n"
+        width = 4
+        
+        result = ''.center(width)
+        for i in range(1, self.board.size + 1):
+            result += str(i).center(width)
+        result += "\n"
+        result += ''.ljust(width * (self.board.size + 1), '-') + "\n"
         row = 0
         for r in self.board._rows:
             row += 1
-            buf = '{row}|'.format(row = row)
+            buf = (str(row) + '|').rjust(width)
             for c in r._cells:
-                buf += ' {v} '.format(v = self._cellvalue(c))
+                buf += self._cellvalue(c).center(width)
             result += buf + "\n"
         return result
         
                 
     def _cellvalue(self, cell):
         if cell.value:
-            return cell.value
+            return str(cell.value)
         else:
             return '.'
         
