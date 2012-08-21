@@ -182,13 +182,82 @@ class Board(object):
         return cgs
         
     def cell(self, cellIndex):
-        return self._cells[cellIndex]
+        return self._cells[cellIndex - 1]
         
     def row(self, rowIndex):
-        return self._rows[rowIndex]
+        return self._rows[rowIndex - 1]
         
     def col(self, colIndex):
-        return self._cols[colIndex]
+        return self._cols[colIndex - 1]
         
     def square(self, squareIndex):
-        return self._squares[squareIndex]
+        return self._squares[squareIndex - 1]
+        
+        
+        
+class Console(object):
+    
+    
+    def __init__(self, root):
+        self.board = Board(root)
+        self.do_play = True
+        
+        
+    def draw(self):
+        print self.render()
+        
+        
+    def render(self):
+        result  = "   1  2  3  4  5  6  7  8  9 \n"
+        result += "-----------------------------\n"
+        row = 0
+        for r in self.board._rows:
+            row += 1
+            buf = '{row}|'.format(row = row)
+            for c in r._cells:
+                buf += ' {v} '.format(v = self.cellvalue(c))
+            result += buf + "\n"
+        return result
+        
+                
+    def cellvalue(self, cell):
+        if cell.value:
+            return cell.value
+        else:
+            return '.'
+        
+            
+    def move(self, row, col, value):
+        self.board.row(row).cell(col).move(value)
+        
+
+    def get_command(self):
+        try:
+            coords = [tok for tok in raw_input('Your move (row col value; q to quit): ').strip().split(' ')]
+            if not len(coords):
+                return True
+            cmd = coords[0]
+            
+            if cmd == 'q':
+                self.do_play = False
+                return
+                
+            [row, col, value] = [int(c) for c in coords if c <> '']
+            self.move(row, col, value)
+            
+        except Exception, descr:
+            print "Error: " + descr.message
+            
+        return True
+        
+        
+    def play(self):
+        while self.do_play:
+            self.draw()
+            self.get_command()
+        
+        
+
+if __name__ == '__main__':
+    console = Console(3)
+    console.play()
