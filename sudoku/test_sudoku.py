@@ -5,8 +5,8 @@ import unittest
 class TestDimensions(unittest.TestCase):
     
     def test_check_dimensions_range(self):
-        self.assertRaises(ValueError, sudoku.Dimensions, 1)
-        self.assertRaises(ValueError, sudoku.Dimensions, 5)
+        self.assertRaises(sudoku.SudokuRangeError, sudoku.Dimensions, 1)
+        self.assertRaises(sudoku.SudokuRangeError, sudoku.Dimensions, 5)
         for root in sudoku.Dimensions.valid_roots():
             dim = sudoku.Dimensions(root)
             self.assertEqual(root, dim.root)
@@ -15,8 +15,8 @@ class TestDimensions(unittest.TestCase):
     def test_check_move_value(self):
         dim = sudoku.Dimensions(3)
         
-        self.assertRaises(ValueError, dim.check_move_value, 11)
-        self.assertRaises(ValueError, dim.check_move_value, -1)
+        self.assertRaises(sudoku.SudokuRangeError, dim.check_move_value, 11)
+        self.assertRaises(sudoku.SudokuRangeError, dim.check_move_value, -1)
         self.assertRaises(ValueError, dim.check_move_value, 'Not an integer')
         for i in dim.moves:
             dim.check_move_value(i)
@@ -35,8 +35,8 @@ class TestCell(unittest.TestCase):
 
         # should raise an exception for illegal or out of range values
         self.assertRaises(ValueError, self.cell.move, 'Invalid move')
-        self.assertRaises(ValueError, self.cell.move, -1)
-        self.assertRaises(ValueError, self.cell.move, self.cell.dimensions.size + 1)
+        self.assertRaises(sudoku.SudokuRangeError, self.cell.move, -1)
+        self.assertRaises(sudoku.SudokuRangeError, self.cell.move, self.cell.dimensions.size + 1)
         
         
     def test_clean(self):
@@ -139,8 +139,33 @@ class testBoard(unittest.TestCase):
         self.check_row_col_square(41, 5, 5, 5, 5)
         self.check_row_col_square(80, 9, 8, 9, 8)
         
-            
+
+
+
+class testConsole(unittest.TestCase):
+    
+    
+    def setUp(self):
+        self.console = sudoku.Console(3)
+    
         
+    def test_console_parse_cmd_quit(self):
+        self.assertTrue(self.console.do_play)
+        self.console.parse_command_line('   q ')
+        self.assertFalse(self.console.do_play)
+        
+        
+    def test_console_parse_move(self):
+        self.console.parse_command_line(' 2  5  8 ')
+        self.assertEqual(8, self.console.board.row(2).cell(5).value)
+
+        self.console.parse_command_line('8 9 1 ')
+        self.assertEqual(1, self.console.board.row(8).cell(9).value)
+        
+        self.console.clear_error()
+        self.console.parse_command_line('8 a 19')
+        self.assertNotEqual('', self.console.error_message)
+
     
 if __name__ == '__main__':
     unittest.main()

@@ -1,4 +1,17 @@
 
+class SudokuException(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+        
+class SudokuDeniedMove(SudokuException):
+    pass
+
+class SudokuRangeError(SudokuException):
+    pass
+
+
 class Dimensions(object):
     """
     A Dimensions object defines the size of the sudoku board and the allowed moves
@@ -7,7 +20,7 @@ class Dimensions(object):
         try:
             introot = int(root)
             if not introot in Dimensions.valid_roots():
-                raise ValueError('Bad root value')
+                raise SudokuRangeError('Bad root value: {root}'.format(root=root))
             self._root = introot
             self._size = self._root**2
         except:
@@ -44,21 +57,12 @@ class Dimensions(object):
         try:
             intvalue = int(value)
             if intvalue < 0 or intvalue > self._size:
-                raise ValueError('Bad move value : %d' % intvalue)
+                raise SudokuRangeError('Bad move value: %d' % intvalue)
             return intvalue
         except:
             raise
     
         
-class SudokuException(Exception):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-        
-class SudokuDeniedMove(SudokuException):
-    pass
-
 class Cell(object):
     
     def __init__(self, dimensions):
@@ -197,14 +201,46 @@ class Board(object):
         
 class Console(object):
     
+    # TODO error reporting
     
     def __init__(self, root):
         self.board = Board(root)
         self.do_play = True
+        self._error_message = ''
         
+
+    # Interactive (non-testable) commands
         
+    def play(self):
+        while self.do_play:
+            self.draw()
+            self.report_and_clear_error()
+            self.get_command_line()
+            
+
     def draw(self):
         print self.render()
+        
+        
+    def report_and_clear_error(self):
+        if self.error_message:
+            print self.error_message
+            self.clear_error()
+            
+    def get_command_line(self):
+        command_line = raw_input('Your move (row col value; q to quit): ').strip()
+        self.parse_command_line(command_line)
+
+
+    # End of interactive commands
+    
+    
+    @property
+    def error_message(self):
+        return self._error_message
+        
+    def clear_error(self):
+        self._error_message = ''
         
         
     def render(self):
@@ -215,46 +251,50 @@ class Console(object):
             row += 1
             buf = '{row}|'.format(row = row)
             for c in r._cells:
-                buf += ' {v} '.format(v = self.cellvalue(c))
+                buf += ' {v} '.format(v = self._cellvalue(c))
             result += buf + "\n"
         return result
         
                 
-    def cellvalue(self, cell):
+    def _cellvalue(self, cell):
         if cell.value:
             return cell.value
         else:
             return '.'
         
-            
-    def move(self, row, col, value):
-        self.board.row(row).cell(col).move(value)
+                    
+    def parse_command_line(self, command_line):
+        command_list = [tok for tok in command_line.split(' ') if tok != '']
+        self.parse_command_list(command_list)
         
-
-    def get_command(self):
+        
+    def parse_command_list(self, command_list):
+        if not len(command_list):
+            return
+            
         try:
-            coords = [tok for tok in raw_input('Your move (row col value; q to quit): ').strip().split(' ')]
-            if not len(coords):
-                return True
-            cmd = coords[0]
+            [row, col, value] = [int(c) for c in command_list if c <> '']
+            self.move(row, col, value)
+            
+        except SudokuException, descr:
+            self._error_message = str(descr)
+            
+        except Exception, descr:
+            self.execute_command(command_list)
+            
+
+    def execute_command(self, command_list):
+            cmd = command_list[0]
             
             if cmd == 'q':
                 self.do_play = False
-                return
+            else:
+                self._error_message = "Bad command: " + ' '.join(command_list)
                 
-            [row, col, value] = [int(c) for c in coords if c <> '']
-            self.move(row, col, value)
-            
-        except Exception, descr:
-            print "Error: " + descr.message
-            
-        return True
         
+    def move(self, row, col, value):
+        self.board.row(row).cell(col).move(value)
         
-    def play(self):
-        while self.do_play:
-            self.draw()
-            self.get_command()
         
         
 
