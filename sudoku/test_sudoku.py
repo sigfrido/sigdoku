@@ -112,9 +112,18 @@ class testCellGroup(unittest.TestCase):
         
 
 class testBoard(unittest.TestCase):
+
     
     def setUp(self):
         self.board = sudoku.Board(3)
+
+        
+    def check_row_col_square(self, cell_global_index, row, col, square, cell_square_index):
+        self.board._cells[cell_global_index - 1].move(5)
+        self.assertEqual(5, self.board._rows[row - 1].cell(col).value)
+        self.assertEqual(5, self.board._cols[col - 1].cell(row).value)
+        self.assertEqual(5, self.board._squares[square - 1].cell(cell_square_index).value)
+        
         
     def test_board_init(self):
         self.assertEqual(len(self.board._cells), 81)
@@ -125,11 +134,10 @@ class testBoard(unittest.TestCase):
         for cell in self.board._cells:
             self.assertEqual(0, cell.value)
 
-        self.board._cells[11].move(5)
-        self.assertEqual(5, self.board._rows[1].cell(3).value)
-        self.assertEqual(5, self.board._cols[2].cell(2).value)
-        self.assertEqual(5, self.board._squares[0].cell(6).value)
-        
+        self.check_row_col_square(2, 1, 2, 1, 2)
+        self.check_row_col_square(12, 2, 3, 1, 6)
+        self.check_row_col_square(41, 5, 5, 5, 5)
+        self.check_row_col_square(80, 9, 8, 9, 8)
         
             
         
