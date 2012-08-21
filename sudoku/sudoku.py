@@ -1,5 +1,4 @@
 
-# TODO refactor as SudokuBoard class members???
 class Dimensions(object):
     def __init__(self, root):
         try:
@@ -15,26 +14,28 @@ class Dimensions(object):
     def valid_roots(cls):
         return [2, 3, 4]
         
-
     @property
     def root(self):
         return self._root
         
     @property
     def num_moves(self):
-        return self._dimensions
+        return self._num_moves
         
     @property
     def moves(self):
-        return set(range(1, self._dimensions + 1))
-
-dims = Dimensions(3)
-
-ROOT = dims.root
-DIMENSIONS = dims.dimensions
-MOVES = dims.moves
-
-
+        return set(range(1, self._num_moves + 1))
+        
+    def check_move_value(self, value):
+        try:
+            intvalue = int(value)
+            if intvalue < 0 or intvalue > self._num_moves:
+                raise ValueError('Bad move value : %d' % intvalue)
+            return intvalue
+        except:
+            raise
+    
+        
 class SudokuException(Exception):
     def __init__(self, value):
         self.value = value
@@ -51,9 +52,16 @@ class Cell(object):
         self._dimensions = dimensions
         self._allowed_moves = self._dimensions.moves
     
+    @property
+    def dimensions(self):
+        return self._dimensions
+        
+    def value(self):
+        return self._value
+                
     def move(self, value):
         try:
-            intvalue = self._check_move_value(value)
+            intvalue = self.dimensions.check_move_value(value)
             if self._value == intvalue:
                 return
             if intvalue:
@@ -69,20 +77,8 @@ class Cell(object):
         except:
             raise
             
-    def _check_move_value(self, value):
-        try:
-            intvalue = int(value)
-            if intvalue < 0 or intvalue > DIMENSIONS:
-                raise ValueError('Bad cell value : %d' % intvalue)
-            return intvalue
-        except:
-            raise
-    
     def clean(self):
         self.move(0)
-        
-    def value(self):
-        return self._value
         
     def is_clean(self):
         return 0 == self._value
@@ -95,23 +91,23 @@ class Cell(object):
         
     def allow_move(self, value):
         # TODO check range
-        self._allowed_moves.add(self._check_move_value(value))
+        self._allowed_moves.add(self.dimensions.check_move_value(value))
         
     def deny_move(self, value):
         # TODO check range
-        self._allowed_moves.remove(self._check_move_value(value))
+        self._allowed_moves.remove(self.dimensions.check_move_value(value))
         
         
         
 class CellGroup(object):
-    _cells = None
     
-    def __init__(self):
+    def __init__(self, dimensions):
         self._cells = []
+        self._dimensions = dimensions
         
     def add_cell(self, cell):
-        if len(self._cells) == DIMENSIONS:
-            raise IndexError('DIMENSIONS exceeded in group')
+        if len(self._cells) == self._dimensions.num_moves:
+            raise IndexError('Dimensions exceeded in group')
             
         if not isinstance(cell, Cell):
             raise Exception('This is not a Cell')
@@ -125,7 +121,10 @@ class CellGroup(object):
     
 class Board(object):
     
-    def __init__(self):
+    def __init__(self, root):
+
+        self._dimensions = Dimensions(root)
+        
         self._cells = []
         self._rows = self._makeCellGroups()
         self._cols = self._makeCellGroups()
