@@ -19,9 +19,7 @@ class Cell(object):
     
     def move(self, value):
         try:
-            intvalue = int(value)
-            if intvalue < 0 or intvalue > DIMENSIONS:
-                raise ValueError('Bad cell value : %d' % intvalue)
+            intvalue = self._check_move_value(value)
             if self._value == intvalue:
                 return
             if intvalue:
@@ -65,11 +63,11 @@ class Cell(object):
         
     def allow_move(self, value):
         # TODO check range
-        self._allowed_moves.add(value)
+        self._allowed_moves.add(self._check_move_value(value))
         
     def deny_move(self, value):
         # TODO check range
-        self._allowed_moves.remove(value)
+        self._allowed_moves.remove(self._check_move_value(value))
         
         
         
