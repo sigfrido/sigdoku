@@ -1,11 +1,27 @@
 import sudoku
 import unittest
 
+
+class TestDimensions(unittest.TestCase):
+    
+    def test_check_dimensions_range(self):
+        self.assertRaises(ValueError, sudoku.Dimensions, 1)
+        self.assertRaises(ValueError, sudoku.Dimensions, 5)
+        for root in sudoku.Dimensions.valid_roots():
+            dim = sudoku.Dimensions(root)
+        
 class TestCell(unittest.TestCase):
 
     def setUp(self):
         self.cell = sudoku.Cell()
         
+        
+    def test_check_move_value(self):
+        self.assertRaises(ValueError, self.cell._check_move_value, 11)
+        self.assertRaises(ValueError, self.cell._check_move_value, -1)
+        self.assertRaises(ValueError, self.cell._check_move_value, 'Not an integer')
+        for i in sudoku.MOVES:
+            self.cell._check_move_value(i)
         
     def test_move(self):
         self.cell.move(5)
@@ -49,7 +65,7 @@ class testCellGroup(unittest.TestCase):
         
     def buildGroup(self):
         group = self.buildEmptyGroup()
-        for i in range(sudoku.DIMENSIONS):
+        for i in sudoku.MOVES:
             group.add_cell(sudoku.Cell())
         return group
         

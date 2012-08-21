@@ -1,5 +1,38 @@
-DIMENSIONS = 9
-ROOT = 3
+
+# TODO refactor as SudokuBoard class members???
+class Dimensions(object):
+    def __init__(self, root):
+        try:
+            introot = int(root)
+            if not introot in Dimensions.valid_roots():
+                raise ValueError('Bad root value')
+            self._root = introot
+            self._dimensions = self._root**2
+        except:
+            raise
+            
+    @classmethod
+    def valid_roots(cls):
+        return [2, 3, 4]
+        
+
+    @property
+    def root(self):
+        return self._root
+        
+    @property
+    def dimensions(self):
+        return self._dimensions
+        
+    @property
+    def moves(self):
+        return set(range(1, self._dimensions + 1))
+
+dims = Dimensions(3)
+
+ROOT = dims.root
+DIMENSIONS = dims.dimensions
+MOVES = dims.moves
 
 
 class SudokuException(Exception):
@@ -15,7 +48,7 @@ class Cell(object):
     
     def __init__(self):
         self._value = 0
-        self._allowed_moves = set(range(1, DIMENSIONS + 1))
+        self._allowed_moves = MOVES.copy()
     
     def move(self, value):
         try:
@@ -43,8 +76,6 @@ class Cell(object):
             return intvalue
         except:
             raise
-        
-        
     
     def clean(self):
         self.move(0)
