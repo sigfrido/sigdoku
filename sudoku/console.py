@@ -4,14 +4,12 @@ import sudoku
 class Console(object):
     
     def __init__(self, root):
-        self.board = sudoku.Board(root)
+        self.new_board(root)
         self.do_play = True
         self._error_message = ''
         self.render_separators = True
         self.cell_width = 4
         self.vertical_separator = '|'
-        self.vertical_separator_every = self.board.root
-        self.horizontal_separator_every = self.board.root
         
 
     # Interactive (non-testable) commands
@@ -19,6 +17,8 @@ class Console(object):
     def play(self):
         while self.do_play:
             self.draw()
+            if self.board.finished():
+                print "Game ended. Type n for a new game"
             self.report_and_clear_error()
             self.get_command_line()
             
@@ -40,6 +40,10 @@ class Console(object):
 
     # End of interactive commands
     
+    def new_board(self, root):
+        self.board = sudoku.Board(root)
+        self.vertical_separator_every = self.board.root
+        self.horizontal_separator_every = self.board.root
     
     @property
     def error_message(self):
@@ -134,6 +138,19 @@ class Console(object):
             
             if cmd == 'q':
                 self.do_play = False
+            elif cmd == 'n':
+                try:
+                    root = int(command_list[1])
+                except:
+                    root = 3
+                self.new_board(root)
+            elif cmd == 'f':
+                cell = self.board.find_forced_move_cell()
+                if cell is None:
+                    self._error_message = "No forced move cells"
+                else:
+                    value = list(cell.allowed_moves())[0]
+                    cell.move(value)
             else:
                 self._error_message = "Bad command: " + ' '.join(command_list)
                 
@@ -145,5 +162,5 @@ class Console(object):
         
 
 if __name__ == '__main__':
-    console = Console(3)
+    console = Console(2)
     console.play()

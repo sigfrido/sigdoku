@@ -72,6 +72,7 @@ class Cell(object):
         self._value = 0
         self._dimensions = dimensions
         self._allowed_moves = self.dimensions.moves
+        self._listeners = []
     
     
     @property
@@ -89,20 +90,33 @@ class Cell(object):
             intvalue = self.dimensions.check_move_value(value)
             if self._value == intvalue:
                 return
+                
             if intvalue:
                 if not intvalue in self.allowed_moves():
                     raise SudokuDeniedMove('This value is denied for the cell')
+                    
             if self._value:
-                #self.groups.allow(self._value)
+                old_value = self._value
                 self._value = 0
+                self.changed(old_value)
+                if not intvalue:
+                    return
+                
             self._value = intvalue
-            if self._value:
-                #self.groups.deny(self._value)
-                pass
+            self.changed(0)
         except:
             raise
     
+    
+    def changed(self, old_value):
+        for g in self._listeners:
+            g.cell_changed(self, old_value)
             
+    
+    def add_listener(self, group):
+        self._listeners.append(group)
+        
+        
     def empty(self):
         self.move(0)
     
@@ -118,13 +132,15 @@ class Cell(object):
     def is_allowed_move(self, value):
         return value in self.allowed_moves()
         
+        
     def allow_move(self, value):
-        # TODO check range
         self._allowed_moves.add(self.dimensions.check_move_value(value))
         
+        
     def deny_move(self, value):
-        # TODO check range
-        self._allowed_moves.remove(self.dimensions.check_move_value(value))
+        value = self.dimensions.check_move_value(value)
+        if value in self._allowed_moves:
+            self._allowed_moves.remove(value)
         
         
         
@@ -133,6 +149,7 @@ class CellGroup(object):
     def __init__(self, dimensions):
         self._cells = []
         self._dimensions = dimensions
+
         
     def add_cell(self, cell):
         if len(self._cells) == self._dimensions.size:
@@ -142,12 +159,37 @@ class CellGroup(object):
             raise Exception('This is not a Cell')
             
         self._cells.append(cell)
+        cell.add_listener(self)
+
         
     def move(self, index, value):
         self.cell(index).move(value)
+
         
     def cell(self, index):
+        index = self._dimensions.check_move_value(index)
         return self._cells[index - 1]
+        
+        
+    def deny_move(self, value, source_cell):
+        for c in self._cells:
+            c.deny_move(value)
+        
+
+    def allow_move(self, value, source_cell):
+        for c in self._cells:
+            c.allow_move(value)
+        
+
+    # TODO refactor to a template method in a base class
+    def cell_changed(self, cell, old_value):
+        if (not old_value) and cell.value:
+            self.deny_move(cell.value, cell)
+        elif old_value and (not cell.value):
+            self.allow_move(old_value, cell)
+        else:
+            raise Exception('cell_changed with same values')
+    
         
     
     
@@ -166,6 +208,8 @@ class Board(object):
         for i in range(self.size**2):
             cell = Cell(self._dimensions)
             self._cells.append(cell)
+            cell.add_listener(self)
+            
             row = i / self.size
             col = i % self.size
             self._rows[row].add_cell(cell)
@@ -176,6 +220,8 @@ class Board(object):
             sqcol = sqindex % self.root
             
             self._squares[sqrow*self.root + sqcol].add_cell(cell)
+            
+        self._empty_cells = self.size**2
             
     @property
     def dimensions(self):
@@ -206,3 +252,23 @@ class Board(object):
         
     def square(self, squareIndex):
         return self._squares[squareIndex - 1]
+
+
+    def cell_changed(self, cell, old_value):
+        if (not old_value) and cell.value:
+            self._empty_cells -= 1
+        elif old_value and (not cell.value):
+            self._empty_cells += 1
+        else:
+            raise Exception('cell_changed with same values')
+
+    def finished(self):
+        return 0 == self._empty_cells
+
+
+    def find_forced_move_cell(self):
+        for c in self._cells:
+            if not c.value:
+                if len(c.allowed_moves()) == 1:
+                    return c
+        return None

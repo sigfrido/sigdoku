@@ -71,6 +71,28 @@ class TestCell(unittest.TestCase):
 
 
 
+    def test_cell_listener(self):
+        listener = TestCell.MockListener()
+        self.cell.add_listener(listener)
+        
+        self.cell.move(5)
+        self.assertEqual(5, listener.new_val)
+        self.assertEqual(0, listener.old_val)
+        
+        self.cell.empty()
+        self.assertEqual(0, listener.new_val)
+        self.assertEqual(5, listener.old_val)
+        
+        
+    class MockListener:
+        old_val = -1
+        new_val = -1
+        
+        def cell_changed(self, cell, old_value):
+            self.old_val = old_value
+            self.new_val = cell.value
+                
+        
 
 class testCellGroup(unittest.TestCase):
 
@@ -105,19 +127,16 @@ class testCellGroup(unittest.TestCase):
         self.assertRaises(Exception, group.add_cell, 'This is not a cell')
 
         
-    def test_two_groups(self):
-        g1 = self.buildGroup()
-        g2 = self.buildGroup()
+    def test_cell_moves(self):
+        group = self.buildGroup()
         
-        g1.move(1, 5)
-        self.assertEqual(g1._cells[0].value, 5)
+        group.move(1, 5)
+        self.assertEqual(group._cells[0].value, 5)
         
-        g2.move(9, 5)
-        self.assertEqual(g2._cells[8].value, 5)
+        group.move(9, 6)
+        self.assertEqual(group._cells[8].value, 6)
         
-        g1.move(1, 5)
-        g2.move(1, 3)
-        self.assertNotEqual(g1._cells[0].value, g2._cells[0].value)
+        self.assertRaises(sudoku.SudokuDeniedMove, group.move, 4, 6)
         
 
 class testBoard(unittest.TestCase):
@@ -127,11 +146,11 @@ class testBoard(unittest.TestCase):
         self.board = sudoku.Board(3)
 
         
-    def check_row_col_square(self, cell_global_index, row, col, square, cell_square_index):
-        self.board._cells[cell_global_index - 1].move(5)
-        self.assertEqual(5, self.board._rows[row - 1].cell(col).value)
-        self.assertEqual(5, self.board._cols[col - 1].cell(row).value)
-        self.assertEqual(5, self.board._squares[square - 1].cell(cell_square_index).value)
+    def check_row_col_square(self, cell_global_index, row, col, square, cell_square_index, value):
+        self.board._cells[cell_global_index - 1].move(value)
+        self.assertEqual(value, self.board._rows[row - 1].cell(col).value)
+        self.assertEqual(value, self.board._cols[col - 1].cell(row).value)
+        self.assertEqual(value, self.board._squares[square - 1].cell(cell_square_index).value)
         
         
     def test_board_init(self):
@@ -143,10 +162,10 @@ class testBoard(unittest.TestCase):
         for cell in self.board._cells:
             self.assertEqual(0, cell.value)
 
-        self.check_row_col_square(2, 1, 2, 1, 2)
-        self.check_row_col_square(12, 2, 3, 1, 6)
-        self.check_row_col_square(41, 5, 5, 5, 5)
-        self.check_row_col_square(80, 9, 8, 9, 8)
+        self.check_row_col_square(2, 1, 2, 1, 2, 1)
+        self.check_row_col_square(12, 2, 3, 1, 6, 2)
+        self.check_row_col_square(41, 5, 5, 5, 5, 3)
+        self.check_row_col_square(80, 9, 8, 9, 8, 4)
         
 
 if __name__ == '__main__':
