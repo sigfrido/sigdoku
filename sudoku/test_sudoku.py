@@ -2,6 +2,30 @@ import sudoku
 import unittest
 
 
+class TestSudokuExceptions(unittest.TestCase):
+    
+    def testOutOfRangeException(self):
+        
+        try:
+            raise sudoku.OutOfRangeException(15)
+            
+        except sudoku.OutOfRangeException, e:
+            self.assertTrue('15' in e.value)
+            
+        except:
+            self.fail('Exception not raised')
+
+
+        try:
+            raise sudoku.OutOfRangeException('String value')
+            
+        except sudoku.OutOfRangeException, e:
+            self.assertEqual('String value', e.value)
+            
+        except:
+            self.fail('Exception not raised')
+
+            
 class TestDimensions(unittest.TestCase):
     
     def test_check_dimensions_range(self):

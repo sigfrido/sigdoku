@@ -5,18 +5,22 @@ class SudokuException(Exception):
     def __str__(self):
         return repr(self.value)
         
+        
 class DeniedMoveException(SudokuException):
     pass
 
 
 class OutOfRangeException(SudokuException):
     def __init__(self, value, format_str = 'Value out of range: %d'):
-        self.value = format_str % value
+        try:
+            self.value = format_str % value
+        except:
+            self.value = value
 
 
 class Dimensions(object):
     """
-    A Dimensions object defines the size of the sudoku board and the allowed moves
+    A Dimensions object defines the size of the sudoku board as well as the range of the allowed moves
     """
     def __init__(self, root):
         try:
