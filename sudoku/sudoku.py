@@ -152,17 +152,24 @@ class Cell(object):
             self._allowed_moves.remove(value)
         
         
-        
-class CellGroup(object):
-    
+class BaseCellGroup(object):
+
     def __init__(self, dimensions):
         self.__cells = []
         self.__dimensions = dimensions
-        self.allow_all_moves()  
+        
+        
+    @property
+    def num_cells(self):
+        return self.__dimensions.size
 
+    
+    def cell_changed(self, cell, old_value):
+        pass
+        
         
     def add_cell(self, cell):
-        if len(self.__cells) == self.__dimensions.size:
+        if len(self.__cells) == self.num_cells:
             raise IndexError('Dimensions exceeded in group')
             
         if not isinstance(cell, Cell):
@@ -170,7 +177,7 @@ class CellGroup(object):
             
         self.__cells.append(cell)
         cell.add_listener(self)
-
+        
         
     def cell(self, index):
         index = self.__dimensions.get_int_in_range(index)
@@ -182,21 +189,32 @@ class CellGroup(object):
         return self.__cells
         
         
+    @property
+    def dimensions(self):
+        return self.__dimensions
+        
+        
+class CellGroup(BaseCellGroup):
+    
+    def __init__(self, dimensions):
+        super(CellGroup, self).__init__(dimensions)
+        self.allow_all_moves()
+
+        
     def deny_move(self, value, source_cell):
-        for c in self.__cells:
+        for c in self.cells:
             c.deny_move(value)
         self._allowed_moves.remove(value)
         
+
+    def allow_all_moves(self):
+        self._allowed_moves = self.dimensions.all_moves
+
 
     def allowed_moves(self):
         return self._allowed_moves
         
         
-    def allow_all_moves(self):
-        self._allowed_moves = self.__dimensions.all_moves
-
-
-    # TODO refactor to a template method in a base class
     def cell_changed(self, cell, old_value):
         if cell.value:
             self.deny_move(cell.value, cell)
@@ -205,7 +223,7 @@ class CellGroup(object):
     # TODO create Move class
     def find_only_available_move(self):
         # Same bas impl - TODO factor out
-        for c in self.__cells:
+        for c in self.cells:
             if not c.value:
                 if len(c.allowed_moves()) == 1:
                     return (c, list(c.allowed_moves())[0])
@@ -217,7 +235,7 @@ class CellGroup(object):
 
         for value in self.allowed_moves():
             cell = None
-            for c in self.__cells:
+            for c in self.cells:
                 if not c.value and c.is_allowed_move(value):
                     if cell is None:
                         cell = c
@@ -233,25 +251,23 @@ class CellGroup(object):
         
     
     
-class Board(object):
+class Board(BaseCellGroup):
     
     def __init__(self, root):
+        super(Board, self).__init__(Dimensions(root))
 
-        self.__dimensions = Dimensions(root)
-        self.__cells = []
         self._rows = self._makeCellGroups()
         self._cols = self._makeCellGroups()
         self._squares = self._makeCellGroups()
 
-        cells_per_facet = self.__dimensions.size
+        cells_per_facet = self.dimensions.size
         cells_per_board = cells_per_facet**2        
         cells_per_square_facet = root
         
         # All zero-based
         for cell_index in range(cells_per_board):
             cell = Cell(self.dimensions)
-            self.__cells.append(cell)
-            cell.add_listener(self)
+            self.add_cell(cell)
             
             board_row = cell_index / cells_per_facet
             board_col = cell_index % cells_per_facet
@@ -269,29 +285,20 @@ class Board(object):
            
             
     @property
-    def dimensions(self):
-        return self.__dimensions
-        
-        
-    @property
     def size(self):
         return self.dimensions.size
+        
+    @property
+    def num_cells(self):
+        return self.dimensions.size**2
+
            
                     
     def _makeCellGroups(self):
         cgs = []
-        for i in range(self.size):
+        for i in range(self.dimensions.size):
             cgs.append(CellGroup(self.dimensions))
         return cgs
-        
-        
-    def cell(self, cellIndex):
-        return self.__cells[cellIndex - 1]
-        
-        
-    @property
-    def cells(self):
-        return self.__cells
         
         
     def row(self, rowIndex):
@@ -319,11 +326,11 @@ class Board(object):
 
 
     def recalc_allowed_moves(self):
-        for cell in self.__cells:
+        for cell in self.cells:
             cell.allow_all_moves()
         for group in self.all_groups:
                 group.allow_all_moves()
-        for cell in self.__cells:
+        for cell in self.cells:
             if cell.value:
                 cell.changed(0)
         
@@ -331,7 +338,7 @@ class Board(object):
     # TODO create Move class
     def find_only_available_move(self):
         # Same bas impl - TODO factor out
-        for c in self.__cells:
+        for c in self.cells:
             if not c.value:
                 if len(c.allowed_moves()) == 1:
                     return (c, list(c.allowed_moves())[0])
