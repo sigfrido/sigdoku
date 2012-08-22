@@ -107,12 +107,9 @@ class TestCell(unittest.TestCase):
             am = am[1:]
         
         
-    def test_allow_move(self):
+    def test_deny_move(self):
         self.cell.deny_move(5)
         self.assertFalse(self.cell.is_allowed_move(5), msg = 'Move should be denied')
-
-        self.cell.allow_move(5)
-        self.assertTrue(self.cell.is_allowed_move(5), msg = 'Move should be allowed')
 
 
 
@@ -175,20 +172,20 @@ class testCellGroup(unittest.TestCase):
     def test_cell_moves(self):
         group = self.buildGroup()
         
-        group.move(1, 5)
+        group.cell(1).move(5)
         self.assertEqual(group.cells[0].value, 5)
         
-        group.move(9, 6)
+        group.cell(9).move(6)
         self.assertEqual(group.cells[8].value, 6)
         
-        self.assertRaises(sudoku.DeniedMoveException, group.move, 4, 6)
+        self.assertRaises(sudoku.DeniedMoveException, group.cell(4).move, 6)
 
         
     def test_find_only_available_move(self):
         group = self.buildGroup()
         
         for i in range(1, 9):
-            group.move(i, i)
+            group.cell(i).move(i)
             
         (cell, value) = group.find_only_available_move()
         
@@ -201,7 +198,7 @@ class testCellGroup(unittest.TestCase):
 
         # cell 1..6 => value 1..6
         for i in range(1, 7):
-            group.move(i, i)
+            group.cell(i).move(i)
             
         group.cell(7).deny_move(8)
         group.cell(9).deny_move(8)
@@ -254,7 +251,7 @@ class testBoard(unittest.TestCase):
     def test_find_only_available_move(self):
         
         for i in range(1, 9):
-            self.board.row(1).move(i, i)
+            self.board.row(1).cell(i).move(i)
             
         (cell, value) = self.board.find_only_available_move()
         
@@ -266,7 +263,7 @@ class testBoard(unittest.TestCase):
 
         # cell 1..6 => value 1..6
         for i in range(1, 7):
-            self.board.row(1).move(i, i)
+            self.board.row(1).cell(i).move(i)
             
         self.board.row(4).cell(7).move(8)
         self.board.row(8).cell(9).move(8)

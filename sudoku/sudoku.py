@@ -142,10 +142,6 @@ class Cell(object):
         return value in self.allowed_moves()
         
         
-    def allow_move(self, value):
-        self._allowed_moves.add(self.dimensions.get_int_in_range(value))
-        
-        
     def allow_all_moves(self):
         self._allowed_moves = self.dimensions.all_moves
 
@@ -176,10 +172,6 @@ class CellGroup(object):
         cell.add_listener(self)
 
         
-    def move(self, index, value):
-        self.cell(index).move(value)
-
-        
     def cell(self, index):
         index = self.__dimensions.get_int_in_range(index)
         return self.__cells[index - 1]
@@ -196,13 +188,6 @@ class CellGroup(object):
         self._allowed_moves.remove(value)
         
 
-    # TODO this won't work at the group level - needs a global recalc!
-    def allow_move(self, value, source_cell):
-        for c in self.__cells:
-            c.allow_move(value)
-        self._allowed_moves.add(value)
-        
-        
     def allowed_moves(self):
         return self._allowed_moves
         
@@ -215,10 +200,6 @@ class CellGroup(object):
     def cell_changed(self, cell, old_value):
         if cell.value:
             self.deny_move(cell.value, cell)
-        else:
-            # TODO this breaks everything - cells should recalculate - at the board level
-            # self.allow_move(old_value, cell)
-            pass
             
             
     # TODO create Move class
@@ -257,30 +238,34 @@ class Board(object):
     def __init__(self, root):
 
         self.__dimensions = Dimensions(root)
-        
         self.__cells = []
         self._rows = self._makeCellGroups()
         self._cols = self._makeCellGroups()
         self._squares = self._makeCellGroups()
+
+        cells_per_facet = self.__dimensions.size
+        cells_per_board = cells_per_facet**2        
+        cells_per_square_facet = root
         
         # All zero-based
-        for i in range(self.size**2):
+        for cell_index in range(cells_per_board):
             cell = Cell(self.dimensions)
             self.__cells.append(cell)
             cell.add_listener(self)
             
-            row = i / self.size
-            col = i % self.size
-            self._rows[row].add_cell(cell)
-            self._cols[col].add_cell(cell)
+            board_row = cell_index / cells_per_facet
+            board_col = cell_index % cells_per_facet
+            self._rows[board_row].add_cell(cell)
+            self._cols[board_col].add_cell(cell)
             
-            sqindex = i / self.root
-            sqrow = sqindex / self.root / self.root
-            sqcol = sqindex % self.root
+            cell_square_index = cell_index / cells_per_square_facet
+            square_row = cell_square_index / cells_per_square_facet / cells_per_square_facet
+            square_col = cell_square_index % cells_per_square_facet
             
-            self._squares[sqrow*self.root + sqcol].add_cell(cell)
+            square_index = square_row*cells_per_square_facet + square_col
+            self._squares[square_index].add_cell(cell)
             
-        self._empty__cells = self.size**2
+        self.__empty_cells = cells_per_board
            
             
     @property
@@ -292,11 +277,6 @@ class Board(object):
     def size(self):
         return self.dimensions.size
            
-                    
-    @property
-    def root(self):
-        return self.dimensions.root
-             
                     
     def _makeCellGroups(self):
         cgs = []
@@ -328,14 +308,14 @@ class Board(object):
 
     def cell_changed(self, cell, old_value):
         if cell.value:
-            self._empty__cells -= 1
+            self.__empty_cells -= 1
         else:
-            self._empty__cells += 1
+            self.__empty_cells += 1
             self.recalc_allowed_moves()
 
 
     def finished(self):
-        return 0 == self._empty__cells
+        return 0 == self.__empty_cells
 
 
     def recalc_allowed_moves(self):

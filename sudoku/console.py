@@ -42,8 +42,8 @@ class Console(object):
     
     def new_board(self, root):
         self.board = sudoku.Board(root)
-        self.vertical_separator_every = self.board.root
-        self.horizontal_separator_every = self.board.root
+        self.vertical_separator_every = self.board.dimensions.root
+        self.horizontal_separator_every = self.board.dimensions.root
     
     @property
     def error_message(self):
