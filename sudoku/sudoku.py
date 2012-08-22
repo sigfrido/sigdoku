@@ -74,7 +74,7 @@ class Cell(object):
     def __init__(self, dimensions):
         self._value = 0
         self._dimensions = dimensions
-        self._allowed_moves = self.dimensions.moves
+        self.allow_all_moves()
         self._listeners = []
     
     
@@ -89,29 +89,22 @@ class Cell(object):
     
                 
     def move(self, value):
-        try:
-            intvalue = self.dimensions.check_move_value(value)
-            if self._value and intvalue:
-                raise SudokuBlockedMove('The cell has already a value')
-                
-            if self._value == intvalue:
-                return
-                
-            if intvalue:
-                if not intvalue in self.allowed_moves():
-                    raise SudokuDeniedMove('This value is denied for the cell')
-                    
-            if self._value:
-                old_value = self._value
-                self._value = 0
-                self.changed(old_value)
-                if not intvalue:
-                    return
-                
+        intvalue = self.dimensions.check_move_value(value)
+        if self._value and intvalue:
+            raise SudokuBlockedMove('The cell has already a value')
+            
+        if self._value == intvalue:
+            return
+            
+        if intvalue:
+            if not intvalue in self.allowed_moves():
+                raise SudokuDeniedMove('This value is denied for the cell')
             self._value = intvalue
             self.changed(0)
-        except:
-            raise
+        else:
+            old_value = self._value
+            self._value = 0
+            self.changed(old_value)
     
     
     def changed(self, old_value):
@@ -143,6 +136,9 @@ class Cell(object):
         self._allowed_moves.add(self.dimensions.check_move_value(value))
         
         
+    def allow_all_moves(self):
+        self._allowed_moves = self.dimensions.moves
+
     def deny_move(self, value):
         value = self.dimensions.check_move_value(value)
         if value in self._allowed_moves:
@@ -155,7 +151,7 @@ class CellGroup(object):
     def __init__(self, dimensions):
         self._cells = []
         self._dimensions = dimensions
-        self._allowed_moves = self._dimensions.moves
+        self.allow_all_moves()  
 
         
     def add_cell(self, cell):
@@ -184,6 +180,7 @@ class CellGroup(object):
         self._allowed_moves.remove(value)
         
 
+    # TODO this won't work at the group level - needs a global recalc!
     def allow_move(self, value, source_cell):
         for c in self._cells:
             c.allow_move(value)
@@ -192,15 +189,18 @@ class CellGroup(object):
     def allowed_moves(self):
         return self._allowed_moves
         
+    def allow_all_moves(self):
+        self._allowed_moves = self._dimensions.moves
 
     # TODO refactor to a template method in a base class
     def cell_changed(self, cell, old_value):
-        if (not old_value) and cell.value:
+        if cell.value:
             self.deny_move(cell.value, cell)
-        elif old_value and (not cell.value):
-            self.allow_move(old_value, cell)
         else:
-            raise Exception('cell_changed with same values')
+            # TODO this breaks everything - cells should recalculate - at the board level
+            # self.allow_move(old_value, cell)
+            pass
+            
             
     # TODO create Move class
     def find_only_available_move(self):
@@ -304,18 +304,27 @@ class Board(object):
 
 
     def cell_changed(self, cell, old_value):
-        if (not old_value) and cell.value:
+        if cell.value:
             self._empty_cells -= 1
-        elif old_value and (not cell.value):
-            self._empty_cells += 1
         else:
-            raise Exception('cell_changed with same values')
+            self._empty_cells += 1
+            self.recalc_allowed_moves()
 
 
     def finished(self):
         return 0 == self._empty_cells
 
 
+    def recalc_allowed_moves(self):
+        for cell in self._cells:
+            cell.allow_all_moves()
+        for group in self.all_groups:
+                group.allow_all_moves()
+        for cell in self._cells:
+            if cell.value:
+                cell.changed(0)
+        
+        
     # TODO create Move class
     def find_only_available_move(self):
         # Same bas impl - TODO factor out
@@ -325,6 +334,11 @@ class Board(object):
                     return (c, list(c.allowed_moves())[0])
                     
         return (None, None)
+        
+
+    @property
+    def all_groups(self):
+        return self._rows + self._cols + self._squares
 
 
     def find_forced_move(self):
@@ -332,10 +346,9 @@ class Board(object):
         if c is not None:
             return (c, v)
                     
-        for grouparray in [self._rows, self._cols, self._squares]:
-            for group in grouparray:
-                (c, v) = group.find_forced_move()
-                if not c is None:
-                    return (c, v)
+        for group in self.all_groups:
+            (c, v) = group.find_forced_move()
+            if not c is None:
+                return (c, v)
                     
         return (None, None)

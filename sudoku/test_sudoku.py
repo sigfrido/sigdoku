@@ -249,6 +249,17 @@ class testBoard(unittest.TestCase):
         
         self.assertEqual(8, value)
         self.assertEqual(cell, self.board.row(1).cell(8))
+        
+        # Test undo
+        cell.move(8)
+        cell.empty()
+        
+        (cell, value) = self.board.find_forced_move()
+        
+        self.assertEqual(8, value)
+        self.assertEqual(cell, self.board.row(1).cell(8))
+        
+        
 
 
 if __name__ == '__main__':
