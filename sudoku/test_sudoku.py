@@ -39,6 +39,11 @@ class TestCell(unittest.TestCase):
         self.assertRaises(sudoku.SudokuRangeError, self.cell.move, self.cell.dimensions.size + 1)
         
         
+    def test_move_allowed_on_empty_only(self):
+        self.cell.move(5)
+        self.assertRaises(sudoku.SudokuBlockedMove, self.cell.move, 4)
+        
+        
     def test_empty(self):
         self.cell.move(5)
         self.assertFalse(self.cell.is_empty())

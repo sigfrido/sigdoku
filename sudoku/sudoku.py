@@ -8,6 +8,9 @@ class SudokuException(Exception):
 class SudokuDeniedMove(SudokuException):
     pass
 
+class SudokuBlockedMove(SudokuException):
+    pass
+
 class SudokuRangeError(SudokuException):
     pass
 
@@ -88,6 +91,9 @@ class Cell(object):
     def move(self, value):
         try:
             intvalue = self.dimensions.check_move_value(value)
+            if self._value and intvalue:
+                raise SudokuBlockedMove('The cell has already a value')
+                
             if self._value == intvalue:
                 return
                 
