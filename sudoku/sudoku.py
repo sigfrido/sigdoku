@@ -196,12 +196,24 @@ class CellGroup(object):
         else:
             raise Exception('cell_changed with same values')
             
+    # TODO create Move class
+    def find_only_available_move(self):
+        # Same bas impl - TODO factor out
+        for c in self._cells:
+            if not c.value:
+                if len(c.allowed_moves()) == 1:
+                    return (c, list(c.allowed_moves())[0])
+                    
+        return (None, None)
+        
+        
             
     def find_forced_move(self):
+
         for value in self.allowed_moves():
             cell = None
             for c in self._cells:
-                if c.is_allowed_move(value):
+                if not c.value and c.is_allowed_move(value):
                     if cell is None:
                         cell = c
                     else:
@@ -245,18 +257,22 @@ class Board(object):
             self._squares[sqrow*self.root + sqcol].add_cell(cell)
             
         self._empty_cells = self.size**2
+           
             
     @property
     def dimensions(self):
         return self._dimensions
         
+        
     @property
     def size(self):
         return self._dimensions.size
+           
                     
     @property
     def root(self):
         return self._dimensions.root
+             
                     
     def _makeCellGroups(self):
         cgs = []
@@ -264,14 +280,18 @@ class Board(object):
             cgs.append(CellGroup(self.dimensions))
         return cgs
         
+        
     def cell(self, cellIndex):
         return self._cells[cellIndex - 1]
+        
         
     def row(self, rowIndex):
         return self._rows[rowIndex - 1]
         
+        
     def col(self, colIndex):
         return self._cols[colIndex - 1]
+        
         
     def square(self, squareIndex):
         return self._squares[squareIndex - 1]
@@ -285,15 +305,26 @@ class Board(object):
         else:
             raise Exception('cell_changed with same values')
 
+
     def finished(self):
         return 0 == self._empty_cells
 
 
-    def find_forced_move(self):
+    # TODO create Move class
+    def find_only_available_move(self):
+        # Same bas impl - TODO factor out
         for c in self._cells:
             if not c.value:
                 if len(c.allowed_moves()) == 1:
                     return (c, list(c.allowed_moves())[0])
+                    
+        return (None, None)
+
+
+    def find_forced_move(self):
+        (c, v) = self.find_only_available_move()
+        if c is not None:
+            return (c, v)
                     
         for grouparray in [self._rows, self._cols, self._squares]:
             for group in grouparray:

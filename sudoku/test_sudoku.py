@@ -137,6 +137,35 @@ class testCellGroup(unittest.TestCase):
         self.assertEqual(group._cells[8].value, 6)
         
         self.assertRaises(sudoku.SudokuDeniedMove, group.move, 4, 6)
+
+        
+    def test_find_only_available_move(self):
+        group = self.buildGroup()
+        
+        for i in range(1, 9):
+            group.move(i, i)
+            
+        (cell, value) = group.find_only_available_move()
+        
+        self.assertEqual(9, value)
+        self.assertEqual(cell, group.cell(9))
+        
+        
+    def find_forced_move(self):
+        group = self.buildGroup()
+
+        # cell 1..6 => value 1..6
+        for i in range(1, 7):
+            group.move(i, i)
+            
+        group.cell(7).deny_move(8)
+        group.cell(9).deny_move(8)
+        
+        (cell, value) = group.find_forced_move()
+        
+        self.assertEqual(8, value)
+        self.assertEqual(cell, group.cell(8))
+        
         
 
 class testBoard(unittest.TestCase):
@@ -153,7 +182,7 @@ class testBoard(unittest.TestCase):
         self.assertEqual(value, self.board._squares[square - 1].cell(cell_square_index).value)
         
         
-    def test_board_init(self):
+    def test_init(self):
         self.assertEqual(len(self.board._cells), 81)
         self.assertEqual(len(self.board._rows), 9)
         self.assertEqual(len(self.board._cols), 9)
@@ -167,6 +196,41 @@ class testBoard(unittest.TestCase):
         self.check_row_col_square(41, 5, 5, 5, 5, 3)
         self.check_row_col_square(80, 9, 8, 9, 8, 4)
         
+        
+    def test_allow_move(self):
+        
+        self.board.row(1).cell(3).move(4)
+        for i in range(1, 10):
+            self.assertFalse(self.board.row(1).cell(i).is_allowed_move(4))
+            self.assertFalse(self.board.col(3).cell(i).is_allowed_move(4))
+            self.assertFalse(self.board.square(1).cell(i).is_allowed_move(4))
+        
+
+    def test_find_only_available_move(self):
+        
+        for i in range(1, 9):
+            self.board.row(1).move(i, i)
+            
+        (cell, value) = self.board.find_only_available_move()
+        
+        self.assertEqual(9, value)
+        self.assertEqual(cell, self.board.cell(9))
+        
+        
+    def test_find_forced_move(self):
+
+        # cell 1..6 => value 1..6
+        for i in range(1, 7):
+            self.board.row(1).move(i, i)
+            
+        self.board.row(4).cell(7).move(8)
+        self.board.row(8).cell(9).move(8)
+        
+        (cell, value) = self.board.find_forced_move()
+        
+        self.assertEqual(8, value)
+        self.assertEqual(cell, self.board.row(1).cell(8))
+
 
 if __name__ == '__main__':
     unittest.main()
