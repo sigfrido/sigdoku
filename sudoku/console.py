@@ -97,7 +97,7 @@ class Console(object):
     def _render_cell_row(self, row, row_num):
         buf = (str(row_num) + self.vertical_separator).rjust(self.cell_width)
         col = 0
-        for c in row._cells:
+        for c in row.__cells:
             col += 1
             buf += self._render_cell(c).center(self.cell_width)
             buf += self._render_vertical_separator(col)

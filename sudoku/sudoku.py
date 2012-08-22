@@ -1,34 +1,45 @@
 
 class SudokuException(Exception):
+    
     def __init__(self, value):
         self.value = value
+        
+        
     def __str__(self):
         return repr(self.value)
         
         
 class DeniedMoveException(SudokuException):
+    
     pass
 
 
 class OutOfRangeException(SudokuException):
-    def __init__(self, value, format_str = 'Value out of range: %d'):
+    
+    def __init__(self, value):
         try:
-            self.value = format_str % value
+            self.value = 'Value out of range: %d' % value
         except:
+            # In case value is a string
             self.value = value
+
 
 
 class Dimensions(object):
     """
     A Dimensions object defines the size of the sudoku board as well as the range of the allowed moves
     """
+
+    VALID_ROOTS = [2, 3, 4]
+    
+
     def __init__(self, root):
         try:
             introot = int(root)
-            if not introot in Dimensions.valid_roots():
+            if not introot in Dimensions.VALID_ROOTS:
                 raise OutOfRangeException(root)
-            self._root = introot
-            self._size = self._root**2
+            self.__root = introot
+            self.__size = self.__root**2
         except:
             raise
         
@@ -38,12 +49,7 @@ class Dimensions(object):
         """
         For a typical sudoku board, root = 3
         """
-        return self._root
-        
-        
-    @classmethod
-    def valid_roots(cls):
-        return [2, 3, 4]
+        return self.__root
         
         
     @property
@@ -51,22 +57,23 @@ class Dimensions(object):
         """
         The board size is the root value squared: 9 for a typical sudoku board
         """
-        return self._size
+        return self.__size
         
         
     @property
-    def moves(self):
-        return set(range(1, self._size + 1))
+    def all_moves(self):
+        return set(range(1, self.__size + 1))
         
         
-    def check_move_value(self, value):
+    def get_int_in_range(self, value):
         try:
             intvalue = int(value)
-            if intvalue < 0 or intvalue > self._size:
+            if intvalue < 0 or intvalue > self.__size:
                 raise OutOfRangeException(intvalue)
             return intvalue
         except:
-            raise
+            # TODO: raise a SudokuException anyway?
+            raise # ValueError
     
         
 class Cell(object):
@@ -75,48 +82,48 @@ class Cell(object):
     """
     
     def __init__(self, dimensions):
-        self._value = 0
-        self._dimensions = dimensions
+        self.__value = 0
+        self.__dimensions = dimensions
         self.allow_all_moves()
-        self._listeners = []
+        self.__listeners = []
     
     
     @property
     def dimensions(self):
-        return self._dimensions
+        return self.__dimensions
     
         
     @property
     def value(self):
-        return self._value
+        return self.__value
     
                 
     def move(self, value):
-        intvalue = self.dimensions.check_move_value(value)
-        if self._value and intvalue:
+        intvalue = self.dimensions.get_int_in_range(value)
+        if self.__value and intvalue:
             raise DeniedMoveException('The cell has already a value')
             
-        if self._value == intvalue:
+        if self.__value == intvalue:
             return
             
         if intvalue:
             if not intvalue in self.allowed_moves():
                 raise DeniedMoveException('This value is denied for the cell')
-            self._value = intvalue
+            self.__value = intvalue
             self.changed(0)
         else:
-            old_value = self._value
-            self._value = 0
+            old_value = self.__value
+            self.__value = 0
             self.changed(old_value)
     
     
     def changed(self, old_value):
-        for g in self._listeners:
+        for g in self.__listeners:
             g.cell_changed(self, old_value)
             
     
     def add_listener(self, group):
-        self._listeners.append(group)
+        self.__listeners.append(group)
         
         
     def empty(self):
@@ -124,7 +131,7 @@ class Cell(object):
     
         
     def is_empty(self):
-        return 0 == self._value
+        return 0 == self.__value
     
         
     def allowed_moves(self):
@@ -136,14 +143,15 @@ class Cell(object):
         
         
     def allow_move(self, value):
-        self._allowed_moves.add(self.dimensions.check_move_value(value))
+        self._allowed_moves.add(self.dimensions.get_int_in_range(value))
         
         
     def allow_all_moves(self):
-        self._allowed_moves = self.dimensions.moves
+        self._allowed_moves = self.dimensions.all_moves
+
 
     def deny_move(self, value):
-        value = self.dimensions.check_move_value(value)
+        value = self.dimensions.get_int_in_range(value)
         if value in self._allowed_moves:
             self._allowed_moves.remove(value)
         
@@ -152,19 +160,19 @@ class Cell(object):
 class CellGroup(object):
     
     def __init__(self, dimensions):
-        self._cells = []
-        self._dimensions = dimensions
+        self.__cells = []
+        self.__dimensions = dimensions
         self.allow_all_moves()  
 
         
     def add_cell(self, cell):
-        if len(self._cells) == self._dimensions.size:
+        if len(self.__cells) == self.__dimensions.size:
             raise IndexError('Dimensions exceeded in group')
             
         if not isinstance(cell, Cell):
             raise Exception('This is not a Cell')
             
-        self._cells.append(cell)
+        self.__cells.append(cell)
         cell.add_listener(self)
 
         
@@ -173,27 +181,35 @@ class CellGroup(object):
 
         
     def cell(self, index):
-        index = self._dimensions.check_move_value(index)
-        return self._cells[index - 1]
+        index = self.__dimensions.get_int_in_range(index)
+        return self.__cells[index - 1]
+        
+        
+    @property
+    def cells(self):
+        return self.__cells
         
         
     def deny_move(self, value, source_cell):
-        for c in self._cells:
+        for c in self.__cells:
             c.deny_move(value)
         self._allowed_moves.remove(value)
         
 
     # TODO this won't work at the group level - needs a global recalc!
     def allow_move(self, value, source_cell):
-        for c in self._cells:
+        for c in self.__cells:
             c.allow_move(value)
         self._allowed_moves.add(value)
+        
         
     def allowed_moves(self):
         return self._allowed_moves
         
+        
     def allow_all_moves(self):
-        self._allowed_moves = self._dimensions.moves
+        self._allowed_moves = self.__dimensions.all_moves
+
 
     # TODO refactor to a template method in a base class
     def cell_changed(self, cell, old_value):
@@ -208,20 +224,19 @@ class CellGroup(object):
     # TODO create Move class
     def find_only_available_move(self):
         # Same bas impl - TODO factor out
-        for c in self._cells:
+        for c in self.__cells:
             if not c.value:
                 if len(c.allowed_moves()) == 1:
                     return (c, list(c.allowed_moves())[0])
                     
         return (None, None)
         
-        
-            
+                    
     def find_forced_move(self):
 
         for value in self.allowed_moves():
             cell = None
-            for c in self._cells:
+            for c in self.__cells:
                 if not c.value and c.is_allowed_move(value):
                     if cell is None:
                         cell = c
@@ -241,17 +256,17 @@ class Board(object):
     
     def __init__(self, root):
 
-        self._dimensions = Dimensions(root)
+        self.__dimensions = Dimensions(root)
         
-        self._cells = []
+        self.__cells = []
         self._rows = self._makeCellGroups()
         self._cols = self._makeCellGroups()
         self._squares = self._makeCellGroups()
         
         # All zero-based
         for i in range(self.size**2):
-            cell = Cell(self._dimensions)
-            self._cells.append(cell)
+            cell = Cell(self.dimensions)
+            self.__cells.append(cell)
             cell.add_listener(self)
             
             row = i / self.size
@@ -265,22 +280,22 @@ class Board(object):
             
             self._squares[sqrow*self.root + sqcol].add_cell(cell)
             
-        self._empty_cells = self.size**2
+        self._empty__cells = self.size**2
            
             
     @property
     def dimensions(self):
-        return self._dimensions
+        return self.__dimensions
         
         
     @property
     def size(self):
-        return self._dimensions.size
+        return self.dimensions.size
            
                     
     @property
     def root(self):
-        return self._dimensions.root
+        return self.dimensions.root
              
                     
     def _makeCellGroups(self):
@@ -291,7 +306,12 @@ class Board(object):
         
         
     def cell(self, cellIndex):
-        return self._cells[cellIndex - 1]
+        return self.__cells[cellIndex - 1]
+        
+        
+    @property
+    def cells(self):
+        return self.__cells
         
         
     def row(self, rowIndex):
@@ -308,22 +328,22 @@ class Board(object):
 
     def cell_changed(self, cell, old_value):
         if cell.value:
-            self._empty_cells -= 1
+            self._empty__cells -= 1
         else:
-            self._empty_cells += 1
+            self._empty__cells += 1
             self.recalc_allowed_moves()
 
 
     def finished(self):
-        return 0 == self._empty_cells
+        return 0 == self._empty__cells
 
 
     def recalc_allowed_moves(self):
-        for cell in self._cells:
+        for cell in self.__cells:
             cell.allow_all_moves()
         for group in self.all_groups:
                 group.allow_all_moves()
-        for cell in self._cells:
+        for cell in self.__cells:
             if cell.value:
                 cell.changed(0)
         
@@ -331,7 +351,7 @@ class Board(object):
     # TODO create Move class
     def find_only_available_move(self):
         # Same bas impl - TODO factor out
-        for c in self._cells:
+        for c in self.__cells:
             if not c.value:
                 if len(c.allowed_moves()) == 1:
                     return (c, list(c.allowed_moves())[0])

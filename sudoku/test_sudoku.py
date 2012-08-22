@@ -31,19 +31,21 @@ class TestDimensions(unittest.TestCase):
     def test_check_dimensions_range(self):
         self.assertRaises(sudoku.OutOfRangeException, sudoku.Dimensions, 1)
         self.assertRaises(sudoku.OutOfRangeException, sudoku.Dimensions, 5)
-        for root in sudoku.Dimensions.valid_roots():
+        self.assertRaises(ValueError, sudoku.Dimensions, 'Bad root value - nonnumber')
+        
+        for root in sudoku.Dimensions.VALID_ROOTS:
             dim = sudoku.Dimensions(root)
             self.assertEqual(root, dim.root)
             self.assertEqual(root**2, dim.size)
 
-    def test_check_move_value(self):
+    def test_get_int_in_range(self):
         dim = sudoku.Dimensions(3)
         
-        self.assertRaises(sudoku.OutOfRangeException, dim.check_move_value, 11)
-        self.assertRaises(sudoku.OutOfRangeException, dim.check_move_value, -1)
-        self.assertRaises(ValueError, dim.check_move_value, 'Not an integer')
-        for i in dim.moves:
-            dim.check_move_value(i)
+        self.assertRaises(sudoku.OutOfRangeException, dim.get_int_in_range, 11)
+        self.assertRaises(sudoku.OutOfRangeException, dim.get_int_in_range, -1)
+        self.assertRaises(ValueError, dim.get_int_in_range, 'Not an integer')
+        for i in dim.all_moves:
+            i_int = dim.get_int_in_range(i)
         
         
 class TestCell(unittest.TestCase):
@@ -148,19 +150,19 @@ class testCellGroup(unittest.TestCase):
         
     def buildGroup(self):
         group = self.buildEmptyGroup()
-        for i in self.dims.moves:
+        for i in self.dims.all_moves:
             group.add_cell(sudoku.Cell(self.dims))
         return group
         
             
     def test_empty_group(self):
         group = self.buildEmptyGroup()
-        self.assertEqual(len(group._cells), 0)
+        self.assertEqual(len(group.cells), 0)
         
         
     def test_group_dimensions(self):
         group = self.buildGroup()
-        self.assertEqual(len(group._cells), self.dims.size)
+        self.assertEqual(len(group.cells), self.dims.size)
         self.assertRaises(IndexError, group.add_cell, sudoku.Cell(self.dims))
         
         
@@ -174,10 +176,10 @@ class testCellGroup(unittest.TestCase):
         group = self.buildGroup()
         
         group.move(1, 5)
-        self.assertEqual(group._cells[0].value, 5)
+        self.assertEqual(group.cells[0].value, 5)
         
         group.move(9, 6)
-        self.assertEqual(group._cells[8].value, 6)
+        self.assertEqual(group.cells[8].value, 6)
         
         self.assertRaises(sudoku.DeniedMoveException, group.move, 4, 6)
 
@@ -219,19 +221,19 @@ class testBoard(unittest.TestCase):
 
         
     def check_row_col_square(self, cell_global_index, row, col, square, cell_square_index, value):
-        self.board._cells[cell_global_index - 1].move(value)
+        self.board.cells[cell_global_index - 1].move(value)
         self.assertEqual(value, self.board._rows[row - 1].cell(col).value)
         self.assertEqual(value, self.board._cols[col - 1].cell(row).value)
         self.assertEqual(value, self.board._squares[square - 1].cell(cell_square_index).value)
         
         
     def test_init(self):
-        self.assertEqual(len(self.board._cells), 81)
+        self.assertEqual(len(self.board.cells), 81)
         self.assertEqual(len(self.board._rows), 9)
         self.assertEqual(len(self.board._cols), 9)
         self.assertEqual(len(self.board._squares), 9)
         
-        for cell in self.board._cells:
+        for cell in self.board.cells:
             self.assertEqual(0, cell.value)
 
         self.check_row_col_square(2, 1, 2, 1, 2, 1)
