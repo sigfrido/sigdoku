@@ -180,7 +180,6 @@ class BaseCellGroup(object):
         
         
     def cell(self, index):
-        index = self.__dimensions.get_int_in_range(index)
         return self.__cells[index - 1]
         
         
@@ -192,6 +191,35 @@ class BaseCellGroup(object):
     @property
     def dimensions(self):
         return self.__dimensions
+        
+        
+    # TODO create Move class
+    def find_only_available_move(self):
+        for c in self.cells:
+            if not c.value:
+                if len(c.allowed_moves()) == 1:
+                    return (c, list(c.allowed_moves())[0])
+                    
+        return (None, None)
+        
+
+    def find_forced_move(self):
+        for value in self.allowed_moves():
+            cell = None
+            for c in self.cells:
+                if not c.value and c.is_allowed_move(value):
+                    if cell is None:
+                        cell = c
+                    else:
+                        cell = None
+                        break
+            if not cell is None:
+                return (cell, value)
+                
+        return (None, None)
+            
+    
+        
         
         
 class CellGroup(BaseCellGroup):
@@ -218,36 +246,6 @@ class CellGroup(BaseCellGroup):
     def cell_changed(self, cell, old_value):
         if cell.value:
             self.deny_move(cell.value, cell)
-            
-            
-    # TODO create Move class
-    def find_only_available_move(self):
-        # Same bas impl - TODO factor out
-        for c in self.cells:
-            if not c.value:
-                if len(c.allowed_moves()) == 1:
-                    return (c, list(c.allowed_moves())[0])
-                    
-        return (None, None)
-        
-                    
-    def find_forced_move(self):
-
-        for value in self.allowed_moves():
-            cell = None
-            for c in self.cells:
-                if not c.value and c.is_allowed_move(value):
-                    if cell is None:
-                        cell = c
-                    else:
-                        cell = None
-                        break
-            if not cell is None:
-                return (cell, value)
-                
-        return (None, None)
-            
-    
         
     
     
@@ -256,9 +254,9 @@ class Board(BaseCellGroup):
     def __init__(self, root):
         super(Board, self).__init__(Dimensions(root))
 
-        self._rows = self._makeCellGroups()
-        self._cols = self._makeCellGroups()
-        self._squares = self._makeCellGroups()
+        self.__rows = self.__makeCellGroups()
+        self.__cols = self.__makeCellGroups()
+        self.__squares = self.__makeCellGroups()
 
         cells_per_facet = self.dimensions.size
         cells_per_board = cells_per_facet**2        
@@ -271,15 +269,15 @@ class Board(BaseCellGroup):
             
             board_row = cell_index / cells_per_facet
             board_col = cell_index % cells_per_facet
-            self._rows[board_row].add_cell(cell)
-            self._cols[board_col].add_cell(cell)
+            self.__rows[board_row].add_cell(cell)
+            self.__cols[board_col].add_cell(cell)
             
             cell_square_index = cell_index / cells_per_square_facet
             square_row = cell_square_index / cells_per_square_facet / cells_per_square_facet
             square_col = cell_square_index % cells_per_square_facet
             
             square_index = square_row*cells_per_square_facet + square_col
-            self._squares[square_index].add_cell(cell)
+            self.__squares[square_index].add_cell(cell)
             
         self.__empty_cells = cells_per_board
            
@@ -293,8 +291,7 @@ class Board(BaseCellGroup):
         return self.dimensions.size**2
 
            
-                    
-    def _makeCellGroups(self):
+    def __makeCellGroups(self):
         cgs = []
         for i in range(self.dimensions.size):
             cgs.append(CellGroup(self.dimensions))
@@ -302,15 +299,30 @@ class Board(BaseCellGroup):
         
         
     def row(self, rowIndex):
-        return self._rows[rowIndex - 1]
+        return self.__rows[rowIndex - 1]
         
         
     def col(self, colIndex):
-        return self._cols[colIndex - 1]
+        return self.__cols[colIndex - 1]
         
         
     def square(self, squareIndex):
-        return self._squares[squareIndex - 1]
+        return self.__squares[squareIndex - 1]
+        
+    
+    @property    
+    def rows(self):
+        return self.__rows
+        
+        
+    @property
+    def cols(self):
+        return self.__cols
+        
+    
+    @property
+    def squares(self):
+        return self.__squares
 
 
     def cell_changed(self, cell, old_value):
@@ -326,6 +338,8 @@ class Board(BaseCellGroup):
 
 
     def recalc_allowed_moves(self):
+        self.__empty_cells = self.num_cells
+        
         for cell in self.cells:
             cell.allow_all_moves()
         for group in self.all_groups:
@@ -335,30 +349,24 @@ class Board(BaseCellGroup):
                 cell.changed(0)
         
         
-    # TODO create Move class
-    def find_only_available_move(self):
-        # Same bas impl - TODO factor out
-        for c in self.cells:
-            if not c.value:
-                if len(c.allowed_moves()) == 1:
-                    return (c, list(c.allowed_moves())[0])
-                    
-        return (None, None)
-        
-
     @property
     def all_groups(self):
-        return self._rows + self._cols + self._squares
+        return self.__rows + self.__cols + self.__squares
 
 
-    def find_forced_move(self):
-        (c, v) = self.find_only_available_move()
-        if c is not None:
-            return (c, v)
-                    
+    def find_forced_move(self):                    
         for group in self.all_groups:
             (c, v) = group.find_forced_move()
             if not c is None:
                 return (c, v)
                     
         return (None, None)
+
+
+    def find_move(self):
+        (c, v) = self.find_only_available_move()
+        if c is not None:
+            return (c, v)
+            
+        return self.find_forced_move()
+        

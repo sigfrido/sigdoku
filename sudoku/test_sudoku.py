@@ -193,7 +193,7 @@ class testCellGroup(unittest.TestCase):
         self.assertEqual(cell, group.cell(9))
         
         
-    def find_forced_move(self):
+    def test_forced_move(self):
         group = self.buildGroup()
 
         # cell 1..6 => value 1..6
@@ -218,17 +218,17 @@ class testBoard(unittest.TestCase):
 
         
     def check_row_col_square(self, cell_global_index, row, col, square, cell_square_index, value):
-        self.board.cells[cell_global_index - 1].move(value)
-        self.assertEqual(value, self.board._rows[row - 1].cell(col).value)
-        self.assertEqual(value, self.board._cols[col - 1].cell(row).value)
-        self.assertEqual(value, self.board._squares[square - 1].cell(cell_square_index).value)
+        self.board.cell(cell_global_index).move(value)
+        self.assertEqual(value, self.board.row(row).cell(col).value)
+        self.assertEqual(value, self.board.col(col).cell(row).value)
+        self.assertEqual(value, self.board.square(square).cell(cell_square_index).value)
         
         
     def test_init(self):
         self.assertEqual(len(self.board.cells), 81)
-        self.assertEqual(len(self.board._rows), 9)
-        self.assertEqual(len(self.board._cols), 9)
-        self.assertEqual(len(self.board._squares), 9)
+        self.assertEqual(len(self.board.rows), 9)
+        self.assertEqual(len(self.board.cols), 9)
+        self.assertEqual(len(self.board.squares), 9)
         
         for cell in self.board.cells:
             self.assertEqual(0, cell.value)
@@ -258,6 +258,11 @@ class testBoard(unittest.TestCase):
         self.assertEqual(9, value)
         self.assertEqual(cell, self.board.cell(9))
         
+        (cell, value) = self.board.find_move()
+        
+        self.assertEqual(9, value)
+        self.assertEqual(cell, self.board.cell(9))
+        
         
     def test_find_forced_move(self):
 
@@ -278,6 +283,11 @@ class testBoard(unittest.TestCase):
         cell.empty()
         
         (cell, value) = self.board.find_forced_move()
+        
+        self.assertEqual(8, value)
+        self.assertEqual(cell, self.board.row(1).cell(8))
+        
+        (cell, value) = self.board.find_move()
         
         self.assertEqual(8, value)
         self.assertEqual(cell, self.board.row(1).cell(8))
