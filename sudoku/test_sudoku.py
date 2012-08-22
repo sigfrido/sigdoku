@@ -5,8 +5,8 @@ import unittest
 class TestDimensions(unittest.TestCase):
     
     def test_check_dimensions_range(self):
-        self.assertRaises(sudoku.SudokuRangeError, sudoku.Dimensions, 1)
-        self.assertRaises(sudoku.SudokuRangeError, sudoku.Dimensions, 5)
+        self.assertRaises(sudoku.OutOfRangeException, sudoku.Dimensions, 1)
+        self.assertRaises(sudoku.OutOfRangeException, sudoku.Dimensions, 5)
         for root in sudoku.Dimensions.valid_roots():
             dim = sudoku.Dimensions(root)
             self.assertEqual(root, dim.root)
@@ -15,8 +15,8 @@ class TestDimensions(unittest.TestCase):
     def test_check_move_value(self):
         dim = sudoku.Dimensions(3)
         
-        self.assertRaises(sudoku.SudokuRangeError, dim.check_move_value, 11)
-        self.assertRaises(sudoku.SudokuRangeError, dim.check_move_value, -1)
+        self.assertRaises(sudoku.OutOfRangeException, dim.check_move_value, 11)
+        self.assertRaises(sudoku.OutOfRangeException, dim.check_move_value, -1)
         self.assertRaises(ValueError, dim.check_move_value, 'Not an integer')
         for i in dim.moves:
             dim.check_move_value(i)
@@ -43,14 +43,14 @@ class TestCell(unittest.TestCase):
     def test_move_bad_values(self):
         # Raise an exception for illegal or out of range values
         self.assertRaises(ValueError, self.cell.move, 'Invalid move - nonnumber')
-        self.assertRaises(sudoku.SudokuRangeError, self.cell.move, -1)
-        self.assertRaises(sudoku.SudokuRangeError, self.cell.move, self.cell.dimensions.size + 1)
+        self.assertRaises(sudoku.OutOfRangeException, self.cell.move, -1)
+        self.assertRaises(sudoku.OutOfRangeException, self.cell.move, self.cell.dimensions.size + 1)
         
         
     def test_move_allowed_on_empty_only(self):
         self.cell.move(5)
-        self.assertRaises(sudoku.SudokuBlockedMove, self.cell.move, 4)
-        self.assertRaises(sudoku.SudokuBlockedMove, self.cell.move, 5)
+        self.assertRaises(sudoku.DeniedMoveException, self.cell.move, 4)
+        self.assertRaises(sudoku.DeniedMoveException, self.cell.move, 5)
         
         self.cell.empty()
         self.cell.move(4)
@@ -155,7 +155,7 @@ class testCellGroup(unittest.TestCase):
         group.move(9, 6)
         self.assertEqual(group._cells[8].value, 6)
         
-        self.assertRaises(sudoku.SudokuDeniedMove, group.move, 4, 6)
+        self.assertRaises(sudoku.DeniedMoveException, group.move, 4, 6)
 
         
     def test_find_only_available_move(self):

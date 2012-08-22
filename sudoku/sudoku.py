@@ -5,14 +5,13 @@ class SudokuException(Exception):
     def __str__(self):
         return repr(self.value)
         
-class SudokuDeniedMove(SudokuException):
+class DeniedMoveException(SudokuException):
     pass
 
-class SudokuBlockedMove(SudokuException):
-    pass
 
-class SudokuRangeError(SudokuException):
-    pass
+class OutOfRangeException(SudokuException):
+    def __init__(self, value, format_str = 'Value out of range: %d'):
+        self.value = format_str % value
 
 
 class Dimensions(object):
@@ -23,7 +22,7 @@ class Dimensions(object):
         try:
             introot = int(root)
             if not introot in Dimensions.valid_roots():
-                raise SudokuRangeError('Bad root value: {root}'.format(root=root))
+                raise OutOfRangeException(root)
             self._root = introot
             self._size = self._root**2
         except:
@@ -60,7 +59,7 @@ class Dimensions(object):
         try:
             intvalue = int(value)
             if intvalue < 0 or intvalue > self._size:
-                raise SudokuRangeError('Bad move value: %d' % intvalue)
+                raise OutOfRangeException(intvalue)
             return intvalue
         except:
             raise
@@ -91,14 +90,14 @@ class Cell(object):
     def move(self, value):
         intvalue = self.dimensions.check_move_value(value)
         if self._value and intvalue:
-            raise SudokuBlockedMove('The cell has already a value')
+            raise DeniedMoveException('The cell has already a value')
             
         if self._value == intvalue:
             return
             
         if intvalue:
             if not intvalue in self.allowed_moves():
-                raise SudokuDeniedMove('This value is denied for the cell')
+                raise DeniedMoveException('This value is denied for the cell')
             self._value = intvalue
             self.changed(0)
         else:
