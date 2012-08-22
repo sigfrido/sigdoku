@@ -29,12 +29,20 @@ class TestCell(unittest.TestCase):
         self.cell = sudoku.Cell(self.dims)
         
         
-    def test_move(self):
+    def test_move_empty(self):
         self.cell.move(5)
         self.assertEqual(self.cell.value, 5)
+        self.assertFalse(self.cell.is_empty())
+        
+        self.cell.empty()
+        self.assertTrue(self.cell.is_empty())
+        self.assertEqual(self.cell.value, 0)
 
-        # should raise an exception for illegal or out of range values
-        self.assertRaises(ValueError, self.cell.move, 'Invalid move')
+
+
+    def test_move_bad_values(self):
+        # Raise an exception for illegal or out of range values
+        self.assertRaises(ValueError, self.cell.move, 'Invalid move - nonnumber')
         self.assertRaises(sudoku.SudokuRangeError, self.cell.move, -1)
         self.assertRaises(sudoku.SudokuRangeError, self.cell.move, self.cell.dimensions.size + 1)
         
@@ -42,15 +50,11 @@ class TestCell(unittest.TestCase):
     def test_move_allowed_on_empty_only(self):
         self.cell.move(5)
         self.assertRaises(sudoku.SudokuBlockedMove, self.cell.move, 4)
-        
-        
-    def test_empty(self):
-        self.cell.move(5)
-        self.assertFalse(self.cell.is_empty())
+        self.assertRaises(sudoku.SudokuBlockedMove, self.cell.move, 5)
         
         self.cell.empty()
-        self.assertTrue(self.cell.is_empty())
-        self.assertEqual(self.cell.value, 0)
+        self.cell.move(4)
+        
         
         
     def test_allowed_moves(self):
@@ -65,6 +69,16 @@ class TestCell(unittest.TestCase):
         
         self.cell.deny_move(7)
         self.assertEqual(self.cell.allowed_moves(), set([1,2,3,4,6,8]))
+        
+        
+    def test_allowed_moves_complete(self):
+        am = range(1, 10)
+        while True:
+            self.assertEqual(self.cell.allowed_moves(), set(am))
+            if not len(am):
+                break
+            self.cell.deny_move(am[0])
+            am = am[1:]
         
         
     def test_allow_move(self):
