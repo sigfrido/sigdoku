@@ -34,7 +34,7 @@ class Console(object):
         
             
     def get_command_line(self):
-        command_line = raw_input('Your move (row col value; q to quit): ').strip()
+        command_line = raw_input('Your move (row col value; h for help; q to quit): ').strip()
         self.parse_command_line(command_line)
 
 
@@ -87,7 +87,7 @@ class Console(object):
     def _render_cell_rows(self):
         row = 0
         result = ''
-        for r in self.board._rows:
+        for r in self.board.rows:
             row += 1
             result += self._render_cell_row(r, row)
             result += self._render_separator_row(row)
@@ -97,7 +97,7 @@ class Console(object):
     def _render_cell_row(self, row, row_num):
         buf = (str(row_num) + self.vertical_separator).rjust(self.cell_width)
         col = 0
-        for c in row.__cells:
+        for c in row.cells:
             col += 1
             buf += self._render_cell(c).center(self.cell_width)
             buf += self._render_vertical_separator(col)
@@ -150,6 +150,15 @@ class Console(object):
                     self._error_message = "No forced move found"
                 else:
                     cell.move(value)
+            elif cmd == 'h':
+                print """
+<row> <col> <value> - place a value in a cell
+q - Quit game
+n [root] - new game with root dimension (root = 2|3|4)
+f - Find next forced move
+h - print help
+"""
+                
             else:
                 self._error_message = "Bad command: " + ' '.join(command_list)
                 
@@ -161,5 +170,5 @@ class Console(object):
         
 
 if __name__ == '__main__':
-    console = Console(2)
+    console = Console(3)
     console.play()
