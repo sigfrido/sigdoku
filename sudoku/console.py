@@ -17,8 +17,7 @@ class Console(object):
     def play(self):
         while self.do_play:
             self.draw()
-            if self.board.finished():
-                print "Game ended. Type n for a new game"
+            self.check_finished()
             self.report_and_clear_error()
             self.get_command_line()
             
@@ -26,7 +25,13 @@ class Console(object):
     def draw(self):
         print self.render()
         
-        
+
+    def check_finished(self):
+        if self.board.finished():
+            print "Game ended. Type n for a new game"
+            return True
+        return False
+
     def report_and_clear_error(self):
         if self.error_message:
             print self.error_message
@@ -145,11 +150,9 @@ class Console(object):
                     root = 3
                 self.new_board(root)
             elif cmd == 'f':
-                (cell, value) = self.board.find_move()
-                if cell is None:
-                    self._error_message = "No forced move found"
-                else:
-                    cell.move(value)
+                self.find_next_move()
+            elif cmd == 's':
+                self.solve()
             elif cmd == 'h':
                 print """
 <row> <col> <value> - place a value in a cell
@@ -162,11 +165,27 @@ h - print help
             else:
                 self._error_message = "Bad command: " + ' '.join(command_list)
                 
-        
+    
     def move(self, row, col, value):
         self.board.row(row).cell(col).move(value)
         
         
+    def solve(self):
+        while(self.find_next_move()):
+            if self.check_finished():
+                return True
+        return False
+    
+    
+    def find_next_move(self):
+        (cell, value) = self.board.find_move()
+        if cell is None:
+            self._error_message = "No forced move found"
+            return False
+        else:
+            cell.move(value)
+            return True
+            
         
 
 if __name__ == '__main__':
