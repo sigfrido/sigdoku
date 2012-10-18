@@ -195,6 +195,9 @@ class BaseCellGroup(object):
         
     # TODO create Move class
     def find_only_available_move(self):
+        """
+        Here we have 8 full cells - the nineth one gets a compulsory move
+        """
         for c in self.cells:
             if not c.value:
                 if len(c.allowed_moves()) == 1:
@@ -204,6 +207,9 @@ class BaseCellGroup(object):
         
 
     def find_forced_move(self):
+        """
+        Only one cell of the group can have one of the available moves for the group
+        """
         for value in self.allowed_moves():
             cell = None
             for c in self.cells:
@@ -218,7 +224,12 @@ class BaseCellGroup(object):
                 
         return (None, None)
             
-    
+
+    def find_exclusive_move(self):
+        """
+        ???
+        """
+        pass
         
         
         
