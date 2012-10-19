@@ -194,9 +194,11 @@ class BaseCellGroup(object):
         
         
     # TODO create Move class
+    
     def find_only_available_move(self):
         """
         Here we have 8 full cells - the nineth one gets a compulsory move
+        Convert in CellSolver(group) class?
         """
         for c in self.cells:
             if not c.value:
@@ -229,7 +231,7 @@ class BaseCellGroup(object):
         """
         ???
         """
-        pass
+        return (None, None)
         
         
         
