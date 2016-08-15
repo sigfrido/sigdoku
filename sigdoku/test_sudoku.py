@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import sudoku
 import unittest
 
@@ -136,7 +138,7 @@ class TestCell(unittest.TestCase):
                 
         
 
-class testCellGroup(unittest.TestCase):
+class TestCellGroup(unittest.TestCase):
 
     def setUp(self):
         self.dims = sudoku.Dimensions(3)
@@ -210,7 +212,7 @@ class testCellGroup(unittest.TestCase):
         
         
 
-class testBoard(unittest.TestCase):
+class TestBoard(unittest.TestCase):
 
     
     def setUp(self):

@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import console
 import unittest
 
 
-class testConsole(unittest.TestCase):
+class TestConsole(unittest.TestCase):
     
     
     def setUp(self):
