@@ -5,6 +5,7 @@ import sudoku
 class Console(object):
     
     def __init__(self, root):
+        self.solvers = [sudoku.BaseSolver] # config
         self.new_board(root)
         self.do_play = True
         self._error_message = ''
@@ -47,7 +48,7 @@ class Console(object):
     # End of interactive commands
     
     def new_board(self, root):
-        self.board = sudoku.Board(root)
+        self.board = sudoku.Board(root, self.solvers)
         self.vertical_separator_every = self.board.dimensions.root
         self.horizontal_separator_every = self.board.dimensions.root
     
@@ -159,7 +160,7 @@ class Console(object):
 <row> <col> <value> - place a value in a cell
 q - Quit game
 n [root] - new game with root dimension (root = 2|3|4)
-f - Find next forced move
+f - Find next move
 h - print help
 """
                 
@@ -181,7 +182,7 @@ h - print help
     def find_next_move(self):
         (cell, value) = self.board.find_move()
         if cell is None:
-            self._error_message = "No forced move found"
+            self._error_message = "No move found"
             return False
         else:
             cell.move(value)

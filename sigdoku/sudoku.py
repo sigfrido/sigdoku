@@ -1,48 +1,47 @@
 # -*- coding: utf-8 -*-
 
 class SudokuException(Exception):
-    
-    def __init__(self, value):
-        self.value = value
-        
-        
-    def __str__(self):
-        return repr(self.value)
-        
-        
-class DeniedMoveException(SudokuException):
-    
+    """
+    Base class for all sudoku exceptions
+    """
     pass
 
 
-class OutOfRangeException(SudokuException):
     
-    def __init__(self, value):
-        try:
-            self.value = 'Value out of range: %d' % value
-        except:
-            # In case value is a string
-            self.value = value
+class DeniedMoveException(SudokuException):
+    """
+    User attempted a denied move
+    """
+    pass
+
+
+
+class OutOfRangeException(SudokuException):
+    """
+    User specified an out of range value
+    """
+    pass
 
 
 
 class Dimensions(object):
     """
-    A Dimensions object defines the size of the sudoku board as well as the range of the allowed moves
+    A Dimensions object defines the size of the sudoku board and the range 
+    of the allowed moves
     """
 
     VALID_ROOTS = [2, 3, 4]
-    
 
     def __init__(self, root):
         try:
             introot = int(root)
-            if not introot in Dimensions.VALID_ROOTS:
-                raise OutOfRangeException(root)
-            self.__root = introot
-            self.__size = self.__root**2
+            if introot in Dimensions.VALID_ROOTS:
+                self.__root = introot
+                self.__size = self.__root**2
+                return
         except:
-            raise
+            pass
+        raise OutOfRangeException("Root dimension not in range 2..4: %s" % root)
         
             
     @property
@@ -69,14 +68,14 @@ class Dimensions(object):
     def get_int_in_range(self, value):
         try:
             intvalue = int(value)
-            if intvalue < 0 or intvalue > self.__size:
-                raise OutOfRangeException(intvalue)
-            return intvalue
+            if intvalue >= 0 and intvalue <= self.__size:
+                return intvalue
         except:
-            # TODO: raise a SudokuException anyway?
-            raise # ValueError
-    
-        
+            pass
+        raise OutOfRangeException("Value not in range 0..%d: %s" % (self.__size, value))
+
+
+
 class Cell(object):
     """
     A board cell
@@ -103,18 +102,13 @@ class Cell(object):
         intvalue = self.dimensions.get_int_in_range(value)
         if self.__value and intvalue:
             raise DeniedMoveException('The cell has already a value')
-            
-        if self.__value == intvalue:
-            return
-            
         if intvalue:
             if not intvalue in self.allowed_moves():
                 raise DeniedMoveException('This value is denied for the cell')
             self.__value = intvalue
             self.changed(0)
         else:
-            old_value = self.__value
-            self.__value = 0
+            old_value, self.__value = self.__value, 0
             self.changed(old_value)
     
     
@@ -151,6 +145,7 @@ class Cell(object):
         value = self.dimensions.get_int_in_range(value)
         if value in self._allowed_moves:
             self._allowed_moves.remove(value)
+
         
         
 class BaseCellGroup(object):
@@ -196,46 +191,6 @@ class BaseCellGroup(object):
         
     # TODO create Move class
     
-    def find_only_available_move(self):
-        """
-        Here we have 8 full cells - the nineth one gets a compulsory move
-        Convert in CellSolver(group) class?
-        """
-        for c in self.cells:
-            if not c.value:
-                if len(c.allowed_moves()) == 1:
-                    return (c, list(c.allowed_moves())[0])
-                    
-        return (None, None)
-        
-
-    def find_forced_move(self):
-        """
-        Only one cell of the group can have one of the available moves for the group
-        """
-        for value in self.allowed_moves():
-            cell = None
-            for c in self.cells:
-                if not c.value and c.is_allowed_move(value):
-                    if cell is None:
-                        cell = c
-                    else:
-                        cell = None
-                        break
-            if not cell is None:
-                return (cell, value)
-                
-        return (None, None)
-            
-
-    def find_exclusive_move(self):
-        """
-        ???
-        """
-        return (None, None)
-        
-        
-        
 class CellGroup(BaseCellGroup):
     
     def __init__(self, dimensions):
@@ -265,12 +220,13 @@ class CellGroup(BaseCellGroup):
     
 class Board(BaseCellGroup):
     
-    def __init__(self, root):
+    def __init__(self, root, solvers=[]):
         super(Board, self).__init__(Dimensions(root))
 
         self.__rows = self.__makeCellGroups()
         self.__cols = self.__makeCellGroups()
         self.__squares = self.__makeCellGroups()
+        self.__solvers = list(solvers)[:]
 
         cells_per_facet = self.dimensions.size
         cells_per_board = cells_per_facet**2        
@@ -299,7 +255,8 @@ class Board(BaseCellGroup):
     @property
     def size(self):
         return self.dimensions.size
-        
+
+
     @property
     def num_cells(self):
         return self.dimensions.size**2
@@ -368,19 +325,42 @@ class Board(BaseCellGroup):
         return self.__rows + self.__cols + self.__squares
 
 
-    def find_forced_move(self):                    
-        for group in self.all_groups:
-            (c, v) = group.find_forced_move()
-            if not c is None:
-                return (c, v)
-                    
-        return (None, None)
-
-
     def find_move(self):
-        (c, v) = self.find_only_available_move()
-        if c is not None:
-            return (c, v)
+        for solver in self.__solvers:
+            (c, v) = solver.find_move(self)
+            if c is not None:
+                return (c, v)
+        return (None, None)
+        
+        
+        
+class BaseSolver(object):
+    """
+    Returns compulsory moves
+    """
+    def find_move(self, board_or_group):
+        if isinstance(board_or_group, Board):
+            groups = board_or_group.all_groups
+        else:
+            groups = [board_or_group]
+        for group in groups:
+            for c in group.cells:
+                if not c.value:
+                    if len(c.allowed_moves()) == 1:
+                        return (c, list(c.allowed_moves())[0])
+            for value in group.allowed_moves():
+                cell = None
+                for c in group.cells:
+                    if not c.value and c.is_allowed_move(value):
+                        if cell is None:
+                            cell = c
+                        else:
+                            cell = None
+                            break
+                if not cell is None:
+                    return (cell, value)
+            return (None, None)
             
-        return self.find_forced_move()
+
+        
         

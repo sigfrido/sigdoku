@@ -4,36 +4,12 @@ import sudoku
 import unittest
 
 
-class TestSudokuExceptions(unittest.TestCase):
-    
-    def testOutOfRangeException(self):
-        
-        try:
-            raise sudoku.OutOfRangeException(15)
-            
-        except sudoku.OutOfRangeException, e:
-            self.assertTrue('15' in e.value)
-            
-        except:
-            self.fail('Exception not raised')
-
-
-        try:
-            raise sudoku.OutOfRangeException('String value')
-            
-        except sudoku.OutOfRangeException, e:
-            self.assertEqual('String value', e.value)
-            
-        except:
-            self.fail('Exception not raised')
-
-            
 class TestDimensions(unittest.TestCase):
     
     def test_check_dimensions_range(self):
         self.assertRaises(sudoku.OutOfRangeException, sudoku.Dimensions, 1)
         self.assertRaises(sudoku.OutOfRangeException, sudoku.Dimensions, 5)
-        self.assertRaises(ValueError, sudoku.Dimensions, 'Bad root value - nonnumber')
+        self.assertRaises(sudoku.OutOfRangeException, sudoku.Dimensions, 'Bad root value - nonnumber')
         
         for root in sudoku.Dimensions.VALID_ROOTS:
             dim = sudoku.Dimensions(root)
@@ -45,7 +21,7 @@ class TestDimensions(unittest.TestCase):
         
         self.assertRaises(sudoku.OutOfRangeException, dim.get_int_in_range, 11)
         self.assertRaises(sudoku.OutOfRangeException, dim.get_int_in_range, -1)
-        self.assertRaises(ValueError, dim.get_int_in_range, 'Not an integer')
+        self.assertRaises(sudoku.OutOfRangeException, dim.get_int_in_range, 'Not an integer')
         for i in dim.all_moves:
             i_int = dim.get_int_in_range(i)
         
@@ -70,7 +46,7 @@ class TestCell(unittest.TestCase):
 
     def test_move_bad_values(self):
         # Raise an exception for illegal or out of range values
-        self.assertRaises(ValueError, self.cell.move, 'Invalid move - nonnumber')
+        self.assertRaises(sudoku.OutOfRangeException, self.cell.move, 'Invalid move - nonnumber')
         self.assertRaises(sudoku.OutOfRangeException, self.cell.move, -1)
         self.assertRaises(sudoku.OutOfRangeException, self.cell.move, self.cell.dimensions.size + 1)
         
@@ -136,13 +112,13 @@ class TestCell(unittest.TestCase):
             self.old_val = old_value
             self.new_val = cell.value
                 
-        
 
-class TestCellGroup(unittest.TestCase):
-
-    def setUp(self):
-        self.dims = sudoku.Dimensions(3)
+class CellGroupMixin(object):
     
+    def init(self, dims=3):
+        self.dims = sudoku.Dimensions(dims)
+
+
     def buildEmptyGroup(self):
         return sudoku.CellGroup(self.dims)
         
@@ -154,6 +130,12 @@ class TestCellGroup(unittest.TestCase):
         return group
         
             
+
+class TestCellGroup(unittest.TestCase, CellGroupMixin):
+
+    def setUp(self):
+        self.init(3)
+    
     def test_empty_group(self):
         group = self.buildEmptyGroup()
         self.assertEqual(len(group.cells), 0)
@@ -183,40 +165,11 @@ class TestCellGroup(unittest.TestCase):
         self.assertRaises(sudoku.DeniedMoveException, group.cell(4).move, 6)
 
         
-    def test_find_only_available_move(self):
-        group = self.buildGroup()
-        
-        for i in range(1, 9):
-            group.cell(i).move(i)
-            
-        (cell, value) = group.find_only_available_move()
-        
-        self.assertEqual(9, value)
-        self.assertEqual(cell, group.cell(9))
-        
-        
-    def test_forced_move(self):
-        group = self.buildGroup()
-
-        # cell 1..6 => value 1..6
-        for i in range(1, 7):
-            group.cell(i).move(i)
-            
-        group.cell(7).deny_move(8)
-        group.cell(9).deny_move(8)
-        
-        (cell, value) = group.find_forced_move()
-        
-        self.assertEqual(8, value)
-        self.assertEqual(cell, group.cell(8))
-        
-        
 
 class TestBoard(unittest.TestCase):
-
     
     def setUp(self):
-        self.board = sudoku.Board(3)
+        self.board = sudoku.Board(3, [sudoku.BaseSolver()])
 
         
     def check_row_col_square(self, cell_global_index, row, col, square, cell_square_index, value):
@@ -250,52 +203,79 @@ class TestBoard(unittest.TestCase):
             self.assertFalse(self.board.square(1).cell(i).is_allowed_move(4))
         
 
-    def test_find_only_available_move(self):
+
+class TestBaseSolver(unittest.TestCase, CellGroupMixin):
+    
+    def setUp(self):
+        self.init(3)
+        self.board = sudoku.Board(3, [sudoku.BaseSolver()])
+        
+    
+    def test_board_solver(self):
         
         for i in range(1, 9):
             self.board.row(1).cell(i).move(i)
-            
-        (cell, value) = self.board.find_only_available_move()
-        
-        self.assertEqual(9, value)
-        self.assertEqual(cell, self.board.cell(9))
-        
         (cell, value) = self.board.find_move()
-        
         self.assertEqual(9, value)
         self.assertEqual(cell, self.board.cell(9))
         
         
-    def test_find_forced_move(self):
+    def test_board_solver2(self):
 
         # cell 1..6 => value 1..6
         for i in range(1, 7):
             self.board.row(1).cell(i).move(i)
-            
         self.board.row(4).cell(7).move(8)
         self.board.row(8).cell(9).move(8)
-        
-        (cell, value) = self.board.find_forced_move()
-        
+        (cell, value) = self.board.find_move()
         self.assertEqual(8, value)
         self.assertEqual(cell, self.board.row(1).cell(8))
         
         # Test undo
         cell.move(8)
         cell.empty()
-        
-        (cell, value) = self.board.find_forced_move()
-        
-        self.assertEqual(8, value)
-        self.assertEqual(cell, self.board.row(1).cell(8))
-        
         (cell, value) = self.board.find_move()
-        
         self.assertEqual(8, value)
         self.assertEqual(cell, self.board.row(1).cell(8))
+        (cell, value) = self.board.find_move()
+        self.assertEqual(8, value)
+        self.assertEqual(cell, self.board.row(1).cell(8))
+        
+        
+    def test_group_solver(self):
+        group = self.buildGroup()
+        solver = sudoku.BaseSolver()
+        
+        for i in range(1, 9):
+            group.cell(i).move(i)
+            
+        (cell, value) = solver.find_move(group)
+        
+        self.assertEqual(9, value)
+        self.assertEqual(cell, group.cell(9))
+        
+        
+    def test_group_solver_2(self):
+        group = self.buildGroup()
+        solver = sudoku.BaseSolver()
+
+        # cell 1..6 => value 1..6
+        for i in range(1, 7):
+            group.cell(i).move(i)
+            
+        group.cell(7).deny_move(8)
+        group.cell(9).deny_move(8)
+        
+        (cell, value) = solver.find_move(group)
+        
+        self.assertEqual(8, value)
+        self.assertEqual(cell, group.cell(8))
         
         
 
+
+        
+    
 
 if __name__ == '__main__':
     unittest.main()
