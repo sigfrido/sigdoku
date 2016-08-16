@@ -271,6 +271,20 @@ class TestBaseSolver(unittest.TestCase, CellGroupMixin):
         self.assertEqual(8, value)
         self.assertEqual(cell, group.cell(8))
         
+
+    def test_board_solver3(self):
+        for r, c, m in ((1, 1, 1), (4, 3, 1), (7, 4, 1), (9, 9, 1)):
+            self.board.row(r).cell(c).move(m)
+        self.assertIn(1, self.board.square(7).allowed_moves())
+        self.assertIn(1, self.board.row(8).cell(2).allowed_moves())
+        self.assertNotIn(1, self.board.row(8).cell(1).allowed_moves())
+        self.assertNotIn(1, self.board.row(8).cell(3).allowed_moves())
+        for row in (7, 9):
+            for col in (1, 2, 3):
+                self.assertNotIn(1, self.board.row(row).cell(col).allowed_moves())
+        (cell, value) = self.board.find_move()
+        self.assertEqual(1, value)
+        self.assertEqual(cell, self.board.row(8).cell(2))
         
 
 

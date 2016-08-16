@@ -189,8 +189,6 @@ class BaseCellGroup(object):
         return self.__dimensions
         
         
-    # TODO create Move class
-    
 class CellGroup(BaseCellGroup):
     
     def __init__(self, dimensions):
@@ -359,7 +357,7 @@ class BaseSolver(object):
                             break
                 if not cell is None:
                     return (cell, value)
-            return (None, None)
+        return (None, None)
             
 
         
