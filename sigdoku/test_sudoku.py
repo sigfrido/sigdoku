@@ -173,21 +173,35 @@ class TestBoard(unittest.TestCase):
 
         
     def check_row_col_square(self, cell_global_index, row, col, square, cell_square_index, value):
-        self.board.cell(cell_global_index).move(value)
+        cell = self.board.cell(cell_global_index)
+        self.assertEquals(cell.row, row)
+        self.assertEquals(cell.col, col)
+        self.assertEquals(cell.square, square)
+        cell.move(value)
         self.assertEqual(value, self.board.row(row).cell(col).value)
         self.assertEqual(value, self.board.col(col).cell(row).value)
-        self.assertEqual(value, self.board.square(square).cell(cell_square_index).value)
+        sq = self.board.square(square)
+        self.assertEqual(value, sq.cell(cell_square_index).value)
+        self.assertIn(cell.row, sq.rows)
+        self.assertIn(cell.col, sq.cols)
         
         
     def test_init(self):
         self.assertEqual(len(self.board.cells), 81)
         self.assertEqual(len(self.board.rows), 9)
         self.assertEqual(len(self.board.cols), 9)
-        self.assertEqual(len(self.board.squares), 9)
-        
+        self.assertEqual(len(self.board.squares), 9) 
+        for sq_row in (0, 1, 2):
+            for sq_col in (0, 1, 2):
+                sq_idx = sq_row * 3 + sq_col + 1
+                square = self.board.square(sq_idx)
+                self.assertEquals(square.rows, [1 + 3 * sq_row, 2 + 3 * sq_row, 3 + 3 * sq_row])
+                self.assertEquals(square.cols, [1 + 3 * sq_col, 2 + 3 * sq_col, 3 + 3 * sq_col])
         for cell in self.board.cells:
             self.assertEqual(0, cell.value)
-
+            
+            
+    def test_rows_cols_squares(self):
         self.check_row_col_square(2, 1, 2, 1, 2, 1)
         self.check_row_col_square(12, 2, 3, 1, 6, 2)
         self.check_row_col_square(41, 5, 5, 5, 5, 3)
@@ -195,7 +209,6 @@ class TestBoard(unittest.TestCase):
         
         
     def test_allow_move(self):
-        
         self.board.row(1).cell(3).move(4)
         for i in range(1, 10):
             self.assertFalse(self.board.row(1).cell(i).is_allowed_move(4))

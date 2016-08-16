@@ -213,6 +213,15 @@ class CellGroup(BaseCellGroup):
     def cell_changed(self, cell, old_value):
         if cell.value:
             self.deny_move(cell.value, cell)
+            
+            
+class Square(CellGroup):
+
+    def __init__(self, dimensions):
+        super(Square, self).__init__(dimensions)
+        self.rows = []
+        self.cols = []
+    
         
     
     
@@ -223,7 +232,7 @@ class Board(BaseCellGroup):
 
         self.__rows = self.__makeCellGroups()
         self.__cols = self.__makeCellGroups()
-        self.__squares = self.__makeCellGroups()
+        self.__squares = self.__makeCellGroups(Square)
         self.__solvers = list(solvers)[:]
 
         cells_per_facet = self.dimensions.size
@@ -233,19 +242,29 @@ class Board(BaseCellGroup):
         # All zero-based
         for cell_index in range(cells_per_board):
             cell = Cell(self.dimensions)
-            self.add_cell(cell)
-            
+
             board_row = cell_index / cells_per_facet
             board_col = cell_index % cells_per_facet
             self.__rows[board_row].add_cell(cell)
             self.__cols[board_col].add_cell(cell)
+            cell.row = board_row + 1
+            cell.col = board_col + 1
             
             cell_square_index = cell_index / cells_per_square_facet
             square_row = cell_square_index / cells_per_square_facet / cells_per_square_facet
             square_col = cell_square_index % cells_per_square_facet
-            
             square_index = square_row*cells_per_square_facet + square_col
-            self.__squares[square_index].add_cell(cell)
+            square = self.__squares[square_index]
+            square.add_cell(cell)
+            if not cell.row in square.rows:
+                square.rows.append(cell.row)
+            if not cell.col in square.cols:
+                square.cols.append(cell.col)
+            cell.square = square_index + 1
+            
+            # We need board listener being called last
+            self.add_cell(cell)
+            
             
         self.__empty_cells = cells_per_board
            
@@ -260,10 +279,10 @@ class Board(BaseCellGroup):
         return self.dimensions.size**2
 
            
-    def __makeCellGroups(self):
+    def __makeCellGroups(self, clazz=CellGroup):
         cgs = []
         for i in range(self.dimensions.size):
-            cgs.append(CellGroup(self.dimensions))
+            cgs.append(clazz(self.dimensions))
         return cgs
         
         
@@ -297,6 +316,7 @@ class Board(BaseCellGroup):
     def cell_changed(self, cell, old_value):
         if cell.value:
             self.__empty_cells -= 1
+            # self.check_extra_constraints
         else:
             self.__empty_cells += 1
             self.recalc_allowed_moves()
