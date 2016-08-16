@@ -131,7 +131,7 @@ class Console(object):
             return
         try:
             [row, col, value] = [self.CELL_CHARS.find(tok.upper()) for tok in command_list]
-            self.move(row, col, value)
+            self.board.move([(row, col, value)])
         except sudoku.SudokuException, descr:
             self._error_message = str(descr)
         except Exception, descr:
@@ -191,8 +191,7 @@ h - print help
             with open(params[0], 'r') as f:
                 data = json.load(f)
                 self.new_board(data['dim'])
-                for (r, c, v) in data['moves']:
-                    self.move(r, c, v)
+                self.board.move(data['moves'])
         except Exception, e:
             self._error_message = 'Impossibile aprire il file: %s' % e
             
@@ -206,11 +205,7 @@ h - print help
                 json.dump(data, f)
         except Exception, e:
             self._error_message = 'Impossibile salvare il file: %s' % e
-            
-
-    def move(self, row, col, value):
-        self.board.row(row).cell(col).move(value)
-        
+                    
         
     def find_next_move(self):
         (cell, value) = self.board.find_move()

@@ -224,6 +224,10 @@ class TestBoard(unittest.TestCase):
         self.assertEquals(self.board.moves, [(1, 3, 4), (3, 2, 1)])
         self.board.square(8).cell(4).move(9)
         self.assertEquals(self.board.moves, [(1, 3, 4), (3, 2, 1), (8, 4, 9)])
+        self.board.move([(1, 4, 5)])
+        self.assertEquals(self.board.moves, [(1, 3, 4), (3, 2, 1), (8, 4, 9), (1, 4, 5)])
+        self.board.move([(9, 7, 3), (9, 8, 5)])
+        self.assertEquals(self.board.moves, [(1, 3, 4), (3, 2, 1), (8, 4, 9), (1, 4, 5), (9, 7, 3), (9, 8, 5)])
         
 
 

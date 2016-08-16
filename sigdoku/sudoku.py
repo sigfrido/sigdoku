@@ -279,7 +279,11 @@ class Board(BaseCellGroup):
     def num_cells(self):
         return self.dimensions.size**2
 
-           
+          
+    def move(self, moves):
+        for (row, col, value) in moves:
+            self.row(row).cell(col).move(value)
+        
     def __makeCellGroups(self, clazz=CellGroup):
         cgs = []
         for i in range(self.dimensions.size):
