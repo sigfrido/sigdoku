@@ -15,7 +15,6 @@ class Console(object):
         self.render_separators = True
         self.cell_width = 3
         self.vertical_separator = '|'
-        self.moves = []
         
 
     # Interactive (non-testable) commands
@@ -55,7 +54,6 @@ class Console(object):
         self.board = sudoku.Board(root, self.solvers)
         self.vertical_separator_every = self.board.dimensions.root
         self.horizontal_separator_every = self.board.dimensions.root
-        self.moves = []
     
     
     @property
@@ -203,7 +201,7 @@ h - print help
         try:
             data = {}
             data['dim'] = self.board.dimensions.root
-            data['moves'] = self.moves[:]
+            data['moves'] = self.board.moves[:]
             with open(params[0], 'w') as f:
                 json.dump(data, f)
         except Exception, e:
@@ -212,7 +210,6 @@ h - print help
 
     def move(self, row, col, value):
         self.board.row(row).cell(col).move(value)
-        self.moves.append((row, col, value))
         
         
     def find_next_move(self):

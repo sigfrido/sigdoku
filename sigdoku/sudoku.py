@@ -234,6 +234,7 @@ class Board(BaseCellGroup):
         self.__cols = self.__makeCellGroups()
         self.__squares = self.__makeCellGroups(Square)
         self.__solvers = list(solvers)[:]
+        self.__moves = []
 
         cells_per_facet = self.dimensions.size
         cells_per_board = cells_per_facet**2        
@@ -311,9 +312,15 @@ class Board(BaseCellGroup):
     @property
     def squares(self):
         return self.__squares
+        
+        
+    @property
+    def moves(self):
+        return self.__moves
 
 
     def cell_changed(self, cell, old_value):
+        self.__moves.append((cell.row, cell.col, cell.value))
         if cell.value:
             self.__empty_cells -= 1
             # self.check_extra_constraints

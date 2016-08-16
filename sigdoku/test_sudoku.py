@@ -215,6 +215,16 @@ class TestBoard(unittest.TestCase):
             self.assertFalse(self.board.col(3).cell(i).is_allowed_move(4))
             self.assertFalse(self.board.square(1).cell(i).is_allowed_move(4))
         
+        
+    def test_moves(self):
+        self.assertEquals(self.board.moves, [])
+        self.board.row(1).cell(3).move(4)
+        self.assertEquals(self.board.moves, [(1, 3, 4)])
+        self.board.col(2).cell(3).move(1)
+        self.assertEquals(self.board.moves, [(1, 3, 4), (3, 2, 1)])
+        self.board.square(8).cell(4).move(9)
+        self.assertEquals(self.board.moves, [(1, 3, 4), (3, 2, 1), (8, 4, 9)])
+        
 
 
 class TestBaseSolver(unittest.TestCase, CellGroupMixin):
