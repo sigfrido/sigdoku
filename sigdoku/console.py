@@ -174,7 +174,7 @@ h - print help
         
     def cmd_n(self, params):
         try:
-            root = int(params[1])
+            root = int(params[0])
         except:
             root = 3
         self.new_board(root)
