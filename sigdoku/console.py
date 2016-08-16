@@ -5,13 +5,15 @@ import json
         
 class Console(object):
     
+    CELL_CHARS = '0123456789ABCDEFG'
+    
     def __init__(self, root):
         self.solvers = [sudoku.BaseSolver()] # config
         self.new_board(root)
         self.do_play = True
         self._error_message = ''
         self.render_separators = True
-        self.cell_width = 4
+        self.cell_width = 3
         self.vertical_separator = '|'
         self.moves = []
         
@@ -23,7 +25,7 @@ class Console(object):
             self.draw()
             self.check_finished()
             self.report_and_clear_error()
-            self.get_command_line()
+            self.get_command_and_execute()
             
 
     def draw(self):
@@ -42,9 +44,9 @@ class Console(object):
             self.clear_error()
         
             
-    def get_command_line(self):
+    def get_command_and_execute(self):
         command_line = raw_input('Your move (row col value; h for help; q to quit): ').strip()
-        self.parse_command_line(command_line)
+        self.execute_command_line(command_line)
 
 
     # End of interactive commands
@@ -74,7 +76,7 @@ class Console(object):
     def _render_header_row(self):
         result = self.vertical_separator.rjust(self.cell_width)
         for i in range(1, self.board.size + 1):
-            result += str(i).center(self.cell_width)
+            result += self.CELL_CHARS[i].center(self.cell_width)
             result += self._render_vertical_separator(i)
         result += "\n"
         return result
@@ -108,39 +110,32 @@ class Console(object):
         
                 
     def _render_cell_row(self, row, row_num):
-        buf = (str(row_num) + self.vertical_separator).rjust(self.cell_width)
+        buf = (self.CELL_CHARS[row_num] + self.vertical_separator).rjust(self.cell_width)
         col = 0
         for c in row.cells:
             col += 1
             buf += self._render_cell(c).center(self.cell_width)
             buf += self._render_vertical_separator(col)
         buf += "\n"
-        
         return buf
         
         
     def _render_cell(self, cell):
         if cell.value:
-            return str(cell.value)
+            return self.CELL_CHARS[cell.value]
         else:
             return '.'
         
                     
-    def parse_command_line(self, command_line):
+    def execute_command_line(self, command_line):
         command_list = [tok for tok in command_line.split(' ') if tok != '']
-        self.parse_command_list(command_list)
-        
-        
-    def parse_command_list(self, command_list):
         if not len(command_list):
             return
         try:
-            [row, col, value] = [int(c) for c in command_list if c <> '']
+            [row, col, value] = [self.CELL_CHARS.find(tok.upper()) for tok in command_list]
             self.move(row, col, value)
-            
         except sudoku.SudokuException, descr:
             self._error_message = str(descr)
-            
         except Exception, descr:
             self.execute_command(command_list)
             
