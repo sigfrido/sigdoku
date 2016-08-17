@@ -390,15 +390,15 @@ class BaseSolver(object):
     Returns compulsory moves
     """
     def find_move(self, board_or_group):
+        for c in board_or_group.cells:
+            if not c.value:
+                if len(c.allowed_moves()) == 1:
+                    return (c, list(c.allowed_moves())[0])
         if isinstance(board_or_group, Board):
             groups = board_or_group.all_groups
         else:
             groups = [board_or_group]
         for group in groups:
-            for c in group.cells:
-                if not c.value:
-                    if len(c.allowed_moves()) == 1:
-                        return (c, list(c.allowed_moves())[0])
             for value in group.allowed_moves():
                 cell = None
                 for c in group.cells:
