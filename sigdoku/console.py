@@ -131,6 +131,8 @@ class Console(object):
             return
         try:
             [row, col, value] = [self.CELL_CHARS.find(tok.upper()) for tok in command_list]
+            if row < 1 or col < 1:
+                raise Exception
             self.board.move([(row, col, value)])
         except sudoku.SudokuException, descr:
             self._error_message = str(descr)
@@ -155,6 +157,7 @@ q - Quit game
 n [root] - new game with root dimension (root = 2|3|4)
 f - Find next move
 v - Solve game
+i [row col] - interrogate cell
 l [file] - Load a previously saved game (.json)
 s [file] - Save game (.json)
 h - print help
@@ -171,6 +174,14 @@ h - print help
         except:
             root = 3
         self.new_board(root)
+        
+        
+    def cmd_i(self, params):
+        try:
+            [row, col] = [self.CELL_CHARS.find(tok.upper()) for tok in params]
+            print "Cell(%d, %d): %s" % (row, col, self.board.row(row).cell(col).allowed_moves())
+        except:
+            self._error_message = "Cannot find cell %s" %params
 
         
     # find move

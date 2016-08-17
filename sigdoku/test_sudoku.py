@@ -87,7 +87,7 @@ class TestCell(unittest.TestCase):
         
     def test_deny_move(self):
         self.cell.deny_move(5)
-        self.assertFalse(self.cell.is_allowed_move(5), msg = 'Move should be denied')
+        self.assertFalse(self.cell.is_allowed_move(5), msg='Move should be denied')
 
 
 
@@ -312,12 +312,10 @@ class TestBaseSolver(unittest.TestCase, CellGroupMixin):
         (cell, value) = self.board.find_move()
         self.assertEqual(1, value)
         self.assertEqual(cell, self.board.row(8).cell(2))
-        
-
-
-        
-    
-
+ 
+ 
+ 
+ 
 if __name__ == '__main__':
     unittest.main()
 

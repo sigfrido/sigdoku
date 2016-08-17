@@ -29,7 +29,6 @@ class Dimensions(object):
     A Dimensions object defines the size of the sudoku board and the range 
     of the allowed moves
     """
-
     VALID_ROOTS = [2, 3, 4]
 
     def __init__(self, root):
@@ -84,8 +83,8 @@ class Cell(object):
     def __init__(self, dimensions):
         self.__value = 0
         self.__dimensions = dimensions
-        self.allow_all_moves()
         self.__listeners = []
+        self.allow_all_moves()
     
     
     @property
@@ -167,16 +166,14 @@ class BaseCellGroup(object):
     def add_cell(self, cell):
         if len(self.__cells) == self.num_cells:
             raise IndexError('Dimensions exceeded in group')
-            
         if not isinstance(cell, Cell):
             raise Exception('This is not a Cell')
-            
         self.__cells.append(cell)
         cell.add_listener(self)
         
         
     def cell(self, index):
-        return self.__cells[index - 1]
+        return self.__cells[self.dimensions.get_int_in_range(index) - 1]
         
         
     @property
@@ -187,12 +184,14 @@ class BaseCellGroup(object):
     @property
     def dimensions(self):
         return self.__dimensions
-        
-        
+
+
+
 class CellGroup(BaseCellGroup):
     
     def __init__(self, dimensions):
         super(CellGroup, self).__init__(dimensions)
+        self.index = None
         self.allow_all_moves()
 
         
@@ -213,6 +212,7 @@ class CellGroup(BaseCellGroup):
     def cell_changed(self, cell, old_value):
         if cell.value:
             self.deny_move(cell.value, cell)
+
             
             
 class Square(CellGroup):
@@ -283,20 +283,26 @@ class Board(BaseCellGroup):
     def move(self, moves):
         for (row, col, value) in moves:
             self.row(row).cell(col).move(value)
-        
+
+
     def __makeCellGroups(self, clazz=CellGroup):
         cgs = []
         for i in range(self.dimensions.size):
             cgs.append(clazz(self.dimensions))
+            cgs[i].index = i + 1
         return cgs
         
         
+    def cell(self, index):
+        return self.cells[index - 1]
+
+
     def row(self, rowIndex):
-        return self.__rows[rowIndex - 1]
+        return self.__rows[self.dimensions.get_int_in_range(rowIndex) - 1]
         
         
     def col(self, colIndex):
-        return self.__cols[colIndex - 1]
+        return self.__cols[self.dimensions.get_int_in_range(colIndex) - 1]
         
         
     def square(self, squareIndex):
@@ -327,7 +333,7 @@ class Board(BaseCellGroup):
         self.__moves.append((cell.row, cell.col, cell.value))
         if cell.value:
             self.__empty_cells -= 1
-            # self.check_extra_constraints
+            self.check_extra_constraints()
         else:
             self.__empty_cells += 1
             self.recalc_allowed_moves()
@@ -337,9 +343,25 @@ class Board(BaseCellGroup):
         return 0 == self.__empty_cells
 
 
+    def check_extra_constraints(self):
+#        print "============"
+        def deny_rowcol(value, group, square_idx):
+            for cell in group.cells:
+                if (not cell.value) and (cell.square != square_idx) and (value in cell.allowed_moves()):
+#                    print "deny: %d, %d => %d" % (cell.row, cell.col, value)
+                    cell.deny_move(value)
+        for square in self.squares:
+            for value in square.allowed_moves():
+                rc = [(cell.row, cell.col) for cell in square.cells if not cell.value and value in cell.allowed_moves()]
+                rows, cols = [list(set(a)) for a in zip(*rc)]
+                if len(rows) == 1:
+                    deny_rowcol(value, self.row(rows[0]), square.index)
+                elif len(cols) == 1:
+                    deny_rowcol(value, self.col(cols[0]), square.index)
+                        
+                        
     def recalc_allowed_moves(self):
         self.__empty_cells = self.num_cells
-        
         for cell in self.cells:
             cell.allow_all_moves()
         for group in self.all_groups:
