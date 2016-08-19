@@ -276,7 +276,8 @@ class TestBaseSolver(unittest.TestCase, CellGroupMixin):
         for i in range(1, 9):
             group.cell(i).move(i)
             
-        (cell, value) = solver.find_move(group)
+        allowed_moves = group.allowed_moves_for_cells()
+        (cell, value) = solver.find_move(group, allowed_moves)
         
         self.assertEqual(9, value)
         self.assertEqual(cell, group.cell(9))
@@ -285,23 +286,18 @@ class TestBaseSolver(unittest.TestCase, CellGroupMixin):
     def test_group_solver_2(self):
         group = self.buildGroup()
         solver = sudoku.BaseSolver()
-
         # cell 1..6 => value 1..6
         for i in range(1, 7):
             group.cell(i).move(i)
-            
         group.cell(7).deny_move(8)
         group.cell(9).deny_move(8)
-        
-        (cell, value) = solver.find_move(group)
-        
+        (cell, value) = solver.find_move(group, group.allowed_moves_for_cells())
         self.assertEqual(8, value)
         self.assertEqual(cell, group.cell(8))
         
 
     def test_board_solver3(self):
-        for r, c, m in ((1, 1, 1), (4, 3, 1), (7, 4, 1), (9, 9, 1)):
-            self.board.row(r).cell(c).move(m)
+        self.board.move(((1, 1, 1), (4, 3, 1), (7, 4, 1), (9, 9, 1)))
         self.assertIn(1, self.board.square(7).allowed_moves())
         self.assertIn(1, self.board.row(8).cell(2).allowed_moves())
         self.assertNotIn(1, self.board.row(8).cell(1).allowed_moves())

@@ -8,7 +8,7 @@ class Console(object):
     CELL_CHARS = '0123456789ABCDEFG'
     
     def __init__(self, root):
-        self.solvers = [sudoku.BaseSolver()] # config
+        self.solvers = [sudoku.BaseSolver(), sudoku.AdvancedSolver()] # config
         self.new_board(root)
         self.do_play = True
         self._error_message = ''

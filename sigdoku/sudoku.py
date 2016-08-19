@@ -85,8 +85,8 @@ class Cell(object):
         self.__dimensions = dimensions
         self.__listeners = []
         self.allow_all_moves()
-    
-    
+        
+
     @property
     def dimensions(self):
         return self.__dimensions
@@ -129,7 +129,7 @@ class Cell(object):
     
         
     def allowed_moves(self):
-        return self._allowed_moves
+        return self._allowed_moves if not self.value else set()
     
         
     def is_allowed_move(self, value):
@@ -184,6 +184,11 @@ class BaseCellGroup(object):
     @property
     def dimensions(self):
         return self.__dimensions
+        
+        
+    def allowed_moves_for_cells(self):
+        return dict((cell, cell.allowed_moves()) for cell in self.cells if not cell.value)
+        
 
 
 
@@ -212,6 +217,13 @@ class CellGroup(BaseCellGroup):
     def cell_changed(self, cell, old_value):
         if cell.value:
             self.deny_move(cell.value, cell)
+            
+            
+    def recalc_allowed_moves(self):
+        self._allowed_moves = set()
+        for cell in self.cells:
+            self._allowed_moves = self._allowed_moves.union(cell.allowed_moves())
+            
 
             
             
@@ -333,7 +345,6 @@ class Board(BaseCellGroup):
         self.__moves.append((cell.row, cell.col, cell.value))
         if cell.value:
             self.__empty_cells -= 1
-            self.check_extra_constraints()
         else:
             self.__empty_cells += 1
             self.recalc_allowed_moves()
@@ -343,23 +354,6 @@ class Board(BaseCellGroup):
         return 0 == self.__empty_cells
 
 
-    def check_extra_constraints(self):
-#        print "============"
-        def deny_rowcol(value, group, square_idx):
-            for cell in group.cells:
-                if (not cell.value) and (cell.square != square_idx) and (value in cell.allowed_moves()):
-#                    print "deny: %d, %d => %d" % (cell.row, cell.col, value)
-                    cell.deny_move(value)
-        for square in self.squares:
-            for value in square.allowed_moves():
-                rc = [(cell.row, cell.col) for cell in square.cells if not cell.value and value in cell.allowed_moves()]
-                rows, cols = [list(set(a)) for a in zip(*rc)]
-                if len(rows) == 1:
-                    deny_rowcol(value, self.row(rows[0]), square.index)
-                elif len(cols) == 1:
-                    deny_rowcol(value, self.col(cols[0]), square.index)
-                        
-                        
     def recalc_allowed_moves(self):
         self.__empty_cells = self.num_cells
         for cell in self.cells:
@@ -377,8 +371,9 @@ class Board(BaseCellGroup):
 
 
     def find_move(self):
+        allowed_moves = self.allowed_moves_for_cells()
         for solver in self.__solvers:
-            (c, v) = solver.find_move(self)
+            (c, v) = solver.find_move(self, allowed_moves)
             if c is not None:
                 return (c, v)
         return (None, None)
@@ -387,13 +382,14 @@ class Board(BaseCellGroup):
         
 class BaseSolver(object):
     """
-    Returns compulsory moves
+    Returns compulsory moves without altering allowed_moves
     """
-    def find_move(self, board_or_group):
+    def find_move(self, board_or_group, allowed_moves):
+        self.reduce_allowed_moves(board_or_group, allowed_moves)
         for c in board_or_group.cells:
-            if not c.value:
-                if len(c.allowed_moves()) == 1:
-                    return (c, list(c.allowed_moves())[0])
+            cam = allowed_moves[c] if not c.value else []
+            if len(cam) == 1:
+                return (c, list(cam)[0])
         if isinstance(board_or_group, Board):
             groups = board_or_group.all_groups
         else:
@@ -411,6 +407,57 @@ class BaseSolver(object):
                 if not cell is None:
                     return (cell, value)
         return (None, None)
+        
+        
+    def reduce_allowed_moves(self, board_or_group, allowed_moves):
+        """
+        This solver is based solely on base constraints
+        """
+        pass
+        
+        
+        
+class AdvancedSolver(BaseSolver):
+    
+    def reduce_allowed_moves(self, board_or_group, allowed_moves):
+        def deny_rowcol(value, group, square_idx):
+            for cell in group.cells:
+                if (not cell.value) and (cell.square != square_idx) and (value in cell.allowed_moves()):
+                    cell.deny_move(value)
+        if not isinstance(board_or_group, Board):
+            return
+        board = board_or_group
+
+        for square in board.squares:
+            for value in square.allowed_moves():
+                rc = [(cell.row, cell.col) for cell in square.cells if not cell.value and value in cell.allowed_moves()]
+                if len(rc):
+                    rows, cols = [list(set(a)) for a in zip(*rc)]
+                    if len(rows) == 1:
+                        deny_rowcol(value, board.row(rows[0]), square.index)
+                    elif len(cols) == 1:
+                        deny_rowcol(value, board.col(cols[0]), square.index)
+
+        # Check for couples / triplets with the same allowed moves within a group
+        for group in board.all_groups:
+            gmoves = {}
+            for cell in group.cells:
+                if not cell.value:
+                    am = frozenset(cell.allowed_moves())
+                    if len(am) > 1 and len(am) <= board.dimensions.root:
+                        l = gmoves.get(am, list())
+                        l.append(cell)
+                        gmoves[am] = l
+            for am, cells in gmoves.items():
+                if len(cells) == len(am):
+                    print "%s => %s" % (am, '|'.join(['(%d %d %d)' % (c.row, c.col, c.value) for c in cells]))
+                    for cell in group.cells:
+                        if not cell.value and not cell in cells:
+                            for v in list(cell.allowed_moves()):
+                                if v in am:
+                                    cell.deny_move(v)
+            group.recalc_allowed_moves()
+        
             
 
         
