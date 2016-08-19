@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sudoku
+import solvers
 import unittest
 
 
@@ -149,7 +150,7 @@ class TestCellGroup(unittest.TestCase, CellGroupMixin):
 class TestBoard(unittest.TestCase):
     
     def setUp(self):
-        self.board = sudoku.Board(3, [sudoku.BaseSolver()])
+        self.board = sudoku.Board()
 
         
     def check_row_col_square(self, cell_global_index, row, col, square, cell_square_index, value):
@@ -209,13 +210,38 @@ class TestBoard(unittest.TestCase):
         self.board.move([(9, 7, 3), (9, 8, 5)])
         self.assertEquals(self.board.moves, [(1, 3, 4), (3, 2, 1), (8, 4, 9), (1, 4, 5), (9, 7, 3), (9, 8, 5)])
         
+        
+    def test_solve_1(self):
+        self.board.move([
+            [1, 2, 6], [1, 5, 3], [1, 8, 9], [2, 1, 7], 
+            [2, 3, 5], [2, 5, 6], [3, 6, 2], [4, 2, 4], 
+            [4, 7, 6], [4, 9, 8], [5, 1, 8], [5, 4, 9], 
+            [5, 5, 4], [5, 6, 3], [5, 7, 2], [6, 2, 7], 
+            [6, 4, 6], [6, 9, 3], [7, 6, 7], [7, 8, 8], 
+            [7, 9, 6], [8, 1, 2], [8, 3, 4], [8, 7, 7], 
+            [9, 3, 7], [9, 4, 8], [9, 5, 5]
+        ])
+        self.assertTrue(self.board.solve())
+        self.assertEquals(self.board.dump(), 
+        """
+        168734592
+        725169834
+        493582167
+        349275618
+        816943275
+        572618943
+        951427386
+        284396751
+        637851429
+        """.strip().replace(' ', ''))
+        
 
 
 class TestBaseSolver(unittest.TestCase, CellGroupMixin):
     
     def setUp(self):
         self.init(3)
-        self.board = sudoku.Board(3, [sudoku.BaseSolver()])
+        self.board = sudoku.Board(3, [solvers.BaseSolver()])
         
     
     def test_board_solver(self):
@@ -249,33 +275,6 @@ class TestBaseSolver(unittest.TestCase, CellGroupMixin):
         self.assertEqual(cell, self.board.row(1).cell(8))
         
         
-#    def test_group_solver(self):
-#        group = self.buildGroup()
-#        solver = sudoku.BaseSolver()
-#        
-#        for i in range(1, 9):
-#            group.cell(i).move(i)
-#            
-#        allowed_moves = group.allowed_moves_for_cells()
-#        (cell, value) = solver.find_move(group, allowed_moves)
-#        
-#        self.assertEqual(9, value)
-#        self.assertEqual(cell, group.cell(9))
-        
-        
-#    def test_group_solver_2(self):
-#        group = self.buildGroup()
-#        solver = sudoku.BaseSolver()
-#        # cell 1..6 => value 1..6
-#        for i in range(1, 7):
-#            group.cell(i).move(i)
-#        group.cell(7).deny_move(8)
-#        group.cell(9).deny_move(8)
-#        (cell, value) = solver.find_move(group, group.allowed_moves_for_cells())
-#        self.assertEqual(8, value)
-#        self.assertEqual(cell, group.cell(8))
-        
-
     def test_board_solver3(self):
         self.board.move(((1, 1, 1), (4, 3, 1), (7, 4, 1), (9, 9, 1)))
         self.assertIn(1, self.board.square(7).allowed_moves())

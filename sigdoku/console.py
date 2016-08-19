@@ -8,7 +8,7 @@ class Console(object):
     CELL_CHARS = '0123456789ABCDEFG'
     
     def __init__(self, root):
-        self.solvers = [sudoku.BaseSolver(), sudoku.RowColInSquareSolver(), sudoku.CoupleTripletInGroupSolver()] # config
+        self.solvers = sudoku.ALL_SOLVERS # config
         self.new_board(root)
         self.do_play = True
         self._error_message = ''
@@ -17,8 +17,6 @@ class Console(object):
         self.vertical_separator = '|'
         
 
-    # Interactive (non-testable) commands
-        
     def play(self):
         while self.do_play:
             self.draw()
@@ -37,6 +35,7 @@ class Console(object):
             return True
         return False
 
+
     def report_and_clear_error(self):
         if self.error_message:
             print self.error_message
@@ -48,8 +47,6 @@ class Console(object):
         self.execute_command_line(command_line)
 
 
-    # End of interactive commands
-    
     def new_board(self, root):
         self.board = sudoku.Board(root, self.solvers)
         self.vertical_separator_every = self.board.dimensions.root
@@ -64,6 +61,16 @@ class Console(object):
     def clear_error(self):
         self._error_message = ''
         
+        
+    def find_next_move(self):
+        (cell, value) = self.board.find_move()
+        if cell is None:
+            self._error_message = "No move found"
+            return False
+        else:
+            cell.move(value)
+            return True
+            
         
     def render(self):
         return  self._render_header_row() + \
@@ -191,10 +198,7 @@ h - print help
 
     # Solve game        
     def cmd_v(self, params):
-        while(self.find_next_move()):
-            if self.check_finished():
-                return True
-        return False
+        return self.board.solve()
         
         
     def cmd_l(self, params):
@@ -217,16 +221,6 @@ h - print help
         except Exception, e:
             self._error_message = 'Impossibile salvare il file: %s' % e
                     
-        
-    def find_next_move(self):
-        (cell, value) = self.board.find_move()
-        if cell is None:
-            self._error_message = "No move found"
-            return False
-        else:
-            cell.move(value)
-            return True
-            
         
 
 if __name__ == '__main__':
