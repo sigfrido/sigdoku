@@ -383,6 +383,10 @@ class BaseSolver(object):
 
 
 class RowColInSquareSolver(BaseSolver):
+    """
+    If a move is allowed only within a row or col of a square,
+    remove it from the same row/col in the other squares
+    """
     
     def reduce_allowed_moves(self, board, allowed_moves):
         for square in board.squares:
@@ -395,6 +399,7 @@ class RowColInSquareSolver(BaseSolver):
                     elif len(cols) == 1:
                         self.__deny_rowcol(value, board.col(cols[0]), square.index, allowed_moves)
 
+
     def __deny_rowcol(self, value, group, square_idx, allowed_moves):
         for cell in group.cells:
             if (not cell.value) and (cell.square != square_idx) and (value in allowed_moves[cell]):
@@ -404,7 +409,9 @@ class RowColInSquareSolver(BaseSolver):
 
 class CoupleTripletInGroupSolver(BaseSolver):
     """
-    Check for couples / triplets with the same allowed moves within a group
+    If two moves are the only possible moves for two cells of the same group, 
+    or three moves are the only possible moves for three cells, 
+    remove them from the other cells of the group
     """
     
     def reduce_allowed_moves(self, board, allowed_moves):
